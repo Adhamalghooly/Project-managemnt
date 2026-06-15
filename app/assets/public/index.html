@@ -5707,20 +5707,41 @@ const StatsCenter = {
                     label: label,
                     data: data,
                     borderColor: color,
-                    backgroundColor: color + '22',
+                    backgroundColor: color + '33',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 3,
-                    pointRadius: 4,
-                    pointBackgroundColor: color
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                    pointBackgroundColor: color,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
                 }]
             },
             options: {
                 responsive: true,
-                plugins: { legend: { display: true, labels: { font: { family: 'Cairo' } } } },
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: { font: { family: 'Cairo', size: 14 }, padding: 20 }
+                    },
+                    tooltip: {
+                        titleFont: { family: 'Cairo', size: 13 },
+                        bodyFont:  { family: 'Cairo', size: 13 },
+                        padding: 12
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, ticks: { font: { family: 'Cairo' } } },
-                    x: { ticks: { font: { family: 'Cairo' } } }
+                    y: {
+                        beginAtZero: true,
+                        ticks: { font: { family: 'Cairo', size: 13 } },
+                        grid: { color: 'rgba(0,0,0,0.06)' }
+                    },
+                    x: {
+                        ticks: { font: { family: 'Cairo', size: 12 }, maxRotation: 45 },
+                        grid: { color: 'rgba(0,0,0,0.04)' }
+                    }
                 }
             }
         });
@@ -13180,39 +13201,99 @@ const PrintUtils = {
             showNotification('الرسم البياني غير موجود', 'error');
             return;
         }
-        
-        // إضافة اسم الجهة المنفذة للعنوان
-        const branchFilter = document.getElementById('visual-branch-filter')?.value || '';
-        const branchSuffix = branchFilter ? ` - ${branchFilter}` : ' - جميع الفروع';
+
+        const branchFilter = document.getElementById('visual-branch-filter')?.value
+                          || document.getElementById('analysis-branch-filter')?.value
+                          || '';
+        const branchSuffix = branchFilter ? ` — ${branchFilter}` : ' — جميع الفروع';
         const fullTitle = title + branchSuffix;
-        
-        const imgData = canvas.toDataURL('image/png');
+
+        // رسم نسخة عالية الدقة للطباعة
+        const offscreen = document.createElement('canvas');
+        offscreen.width  = canvas.width  * 2;
+        offscreen.height = canvas.height * 2;
+        const octx = offscreen.getContext('2d');
+        octx.scale(2, 2);
+        octx.drawImage(canvas, 0, 0);
+        const imgData = offscreen.toDataURL('image/png', 1.0);
+
+        const dateStr = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html dir="rtl" lang="ar">
-            <head>
-                <meta charset="UTF-8">
-                <title>${fullTitle}</title>
-                <style>
-                    body { font-family: 'Cairo', Arial, sans-serif; text-align: center; padding: 20px; position: relative; min-height: 100vh; }
-                    h1 { color: #2c3e50; margin-bottom: 10px; }
-                    .date { color: #666; margin-bottom: 20px; }
-                    img { max-width: 100%; height: auto; }
-                    .watermark { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 14px; color: rgba(100, 100, 100, 0.7); font-weight: bold; z-index: 1000; }
-                    @media print { .watermark { position: fixed; bottom: 10mm; } }
-                </style>
-            </head>
-            <body>
-                <h1>${fullTitle}</h1>
-                <p class="date">${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                <img src="${imgData}" />
-                <div class="watermark">م.أدهم الغولي</div>
-            </body>
-            </html>
-        `);
+        printWindow.document.write(`<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>${fullTitle}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @page { size: A4 landscape; margin: 8mm; }
+    html, body {
+      width: 100%; height: 100%;
+      font-family: 'Cairo', Arial, sans-serif;
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+    }
+    .header {
+      text-align: center;
+      padding: 6px 0 8px;
+      border-bottom: 2px solid #2c3e50;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+    .header h1 { color: #1e3a8a; font-size: 15pt; font-weight: 700; margin-bottom: 3px; }
+    .header .meta { color: #555; font-size: 9pt; }
+    .chart-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .chart-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .watermark {
+      text-align: center;
+      font-size: 8pt;
+      color: rgba(100,100,100,0.55);
+      font-weight: bold;
+      padding: 4px 0 0;
+      flex-shrink: 0;
+    }
+    @media print {
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1>${fullTitle}</h1>
+      <div class="meta">${dateStr}</div>
+    </div>
+    <div class="chart-wrap">
+      <img src="${imgData}" />
+    </div>
+    <div class="watermark">م.أدهم الغولي</div>
+  </div>
+  <script>
+    window.addEventListener('load', function() { setTimeout(function(){ window.print(); }, 400); });
+  <\/script>
+</body>
+</html>`);
         printWindow.document.close();
-        setTimeout(() => { printWindow.print(); }, 500);
     },
 
     printUnifiedReport() {
