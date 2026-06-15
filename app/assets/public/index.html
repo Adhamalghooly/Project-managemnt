@@ -5030,24 +5030,37 @@ function _doPrint(jobName) {
 
 // ── دالة مساعدة لتنزيل Blob (JSON وغيرها) تعمل في APK ──
 function _downloadDataAsFile(data, filename, mimeType) {
+    const content = typeof data === 'string' ? data : JSON.stringify(data);
+    const type = mimeType || 'application/octet-stream';
     try {
-        const b64 = btoa(unescape(encodeURIComponent(typeof data === 'string' ? data : JSON.stringify(data))));
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = 'data:' + (mimeType || 'application/octet-stream') + ';base64,' + b64;
+        a.href = url;
         a.download = filename;
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        setTimeout(() => { try { document.body.removeChild(a); } catch(e){} }, 300);
+        setTimeout(() => {
+            try { document.body.removeChild(a); } catch(e) {}
+            try { URL.revokeObjectURL(url); } catch(e) {}
+        }, 500);
+        return true;
     } catch(e) {
         try {
-            const blob = new Blob([data], { type: mimeType || 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
+            const b64 = btoa(unescape(encodeURIComponent(content)));
             const a = document.createElement('a');
-            a.href = url; a.download = filename; a.style.display = 'none';
-            document.body.appendChild(a); a.click();
-            setTimeout(() => { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch(e2){} }, 300);
-        } catch(e2) {}
+            a.href = 'data:' + type + ';base64,' + b64;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { try { document.body.removeChild(a); } catch(e2){} }, 500);
+            return true;
+        } catch(e2) {
+            console.error('فشل التنزيل:', e2);
+            return false;
+        }
     }
 }
 // ============================================================
@@ -6364,10 +6377,18 @@ function exportBackup() {
         version: "2.3"
     };
     
-    const dataStr = JSON.stringify(fullBackup);
-    _downloadDataAsFile(dataStr, `backup_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
-    
-    showNotification('تم تصدير النسخة الاحتياطية الكاملة', 'success');
+    try {
+        const dataStr = JSON.stringify(fullBackup);
+        const ok = _downloadDataAsFile(dataStr, `backup_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+        if (ok !== false) {
+            showNotification('✅ تم تصدير النسخة الاحتياطية بنجاح', 'success');
+        } else {
+            showNotification('⚠️ تعذّر تنزيل الملف. يرجى السماح بالتنزيلات في المتصفح.', 'warning');
+        }
+    } catch(err) {
+        console.error('exportBackup error:', err);
+        showNotification('❌ حدث خطأ أثناء إنشاء النسخة الاحتياطية', 'error');
+    }
 }
 
 async function importBackup(file) {
@@ -7189,14 +7210,16 @@ const ExcelHandler = {
 
                 this.clearFile();
                 dateInput.value = '';
-                onDataLoaded();
+                if (typeof onDataLoaded === 'function') {
+                    try { onDataLoaded(); } catch(e) { console.warn('onDataLoaded error:', e); }
+                }
                 showNotification('تم إضافة البيانات للسجل الزمني بنجاح', 'success');
             } else {
                 showNotification('حدث خطأ أثناء حفظ البيانات', 'error');
             }
         } catch (error) {
             console.error('خطأ:', error);
-            showNotification('حدث خطأ غير متوقع', 'error');
+            showNotification('حدث خطأ أثناء معالجة البيانات: ' + (error.message || error), 'error');
         } finally {
             hideLoading();
         }
