@@ -26984,14 +26984,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ═══════════════════════════════════════════════════════════════
-   📅 وحدة التقرير الشهري — Monthly Report Module v2
+   📅 وحدة التقرير الشهري — Monthly Report Module v3
    ═══════════════════════════════════════════════════════════════ */
 (function MonthlyReportModule() {
     'use strict';
 
     const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
                            'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-    const DB_NOTES_KEY = 'mr_engineer_notes';
+    const PNOTES_KEY = 'mr_pnotes_v3';
 
     function fmtDate(d) {
         if (!d) return '—';
@@ -27000,6 +27000,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return dt.toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
     }
     function pct(n) { return (n == null || isNaN(n)) ? '—' : Number(n).toFixed(1) + '%'; }
+    function pad2(n){ return String(n).padStart(2,'0'); }
 
     /* نسبة الإنجاز — مطابقة لـ getProjectProgress */
     function calcProgress(p) {
@@ -27025,161 +27026,173 @@ document.addEventListener('DOMContentLoaded', () => {
     function pKey(p) { return (p.projectNumber||p.projectName||'').toString().trim(); }
     function daysDiff(d1,d2) {
         if (!d1||!d2) return null;
-        const a=new Date(d1),b=new Date(d2);
+        const a=new Date(d1), b=new Date(d2);
         return (isNaN(a)||isNaN(b)) ? null : Math.round((b-a)/86400000);
     }
-    function pad2(n){ return String(n).padStart(2,'0'); }
-    function loadNotes(year,month) {
-        try{ const a=JSON.parse(localStorage.getItem(DB_NOTES_KEY)||'{}'); return a[year+'-'+month]||''; }catch(e){return '';}
+
+    /* تحويل أي قيمة تاريخ (Date object / رقم Excel / نص) إلى YYYY-MM-DD */
+    function parseDateStr(val) {
+        if (!val) return null;
+        if (val instanceof Date) return isNaN(val) ? null : val.toISOString().split('T')[0];
+        if (typeof val === 'number' && val > 25000 && val < 100000) {
+            const d = new Date((val - 25569) * 86400000);
+            return isNaN(d) ? null : d.toISOString().split('T')[0];
+        }
+        const str = String(val).trim();
+        if (!str) return null;
+        const d = new Date(str);
+        return isNaN(d) ? null : d.toISOString().split('T')[0];
+    }
+
+    /* قراءة وحفظ ملاحظات المشاريع في localStorage */
+    function loadAllProjNotes() {
+        try { return JSON.parse(localStorage.getItem(PNOTES_KEY)||'{}'); } catch(e) { return {}; }
     }
 
     /* ── المحرك التحليلي ── */
-    function buildReportData(year, monthIdx) {
-        // مقارنة بالتواريخ النصية فقط (YYYY-MM-DD) لتجنب مشاكل المناطق الزمنية تماماً
-        const monthStartStr = `${year}-${pad2(monthIdx+1)}-01`;
-        const lastDay = new Date(year, monthIdx+1, 0).getDate();
-        const monthEndStr   = `${year}-${pad2(monthIdx+1)}-${pad2(lastDay)}`;
-
+    function buildReportData(startDateStr, endDateStr, label, branchFilter) {
         const sorted = [...(projectsDatabase.timeline||[])]
             .filter(e => e && e.date)
             .sort((a,b) => a.date.localeCompare(b.date));
 
         if (!sorted.length) return { error: 'لا توجد بيانات في قاعدة البيانات. يرجى تحميل ملفات البيانات أولاً.' };
 
-        // startSnap: آخر snapshot قبل بداية الشهر (تاريخه < أول يوم من الشهر)
+        /* startSnap: آخر snapshot قبل بداية الفترة */
         let startSnap = null;
-        for (const s of sorted) {
-            if (s.date < monthStartStr) startSnap = s;
-            else break;
-        }
+        for (const s of sorted) { if (s.date < startDateStr) startSnap = s; else break; }
 
-        // endSnap: آخر snapshot ضمن الشهر أو قبل نهايته
+        /* endSnap: آخر snapshot ضمن الفترة */
         let endSnap = null;
-        for (const s of sorted) {
-            if (s.date <= monthEndStr) endSnap = s;
-            else break;
-        }
+        for (const s of sorted) { if (s.date <= endDateStr) endSnap = s; else break; }
 
-        // إذا لم يوجد endSnap: لا بيانات حتى نهاية هذا الشهر
-        if (!endSnap) return { error: `لا توجد بيانات بتاريخ ${ARABIC_MONTHS[monthIdx]} ${year} أو قبله.` };
+        if (!endSnap) return { error: `لا توجد بيانات بتاريخ ${endDateStr} أو قبله.` };
 
-        // إذا لم يوجد startSnap: لا بيانات قبل الشهر — نستخدم أول snapshot متاح كبديل
         if (!startSnap) {
-            if (sorted.length < 2) {
-                return { error: `يحتاج التقرير الشهري إلى بيانات من فترتين مختلفتين. يوجد حالياً snapshot واحد فقط بتاريخ ${sorted[0].date}.\nيرجى تحميل بيانات لفترة سابقة للمقارنة.` };
-            }
-            // أقدم snapshot متاح كنقطة بداية
+            if (sorted.length < 2) return { error: `يحتاج التقرير إلى بيانات من فترتين مختلفتين.\nيوجد حالياً snapshot واحد فقط (${sorted[0].date}).\nيرجى تحميل بيانات لفترة سابقة.` };
             startSnap = sorted[0];
         }
-
-        // إذا كان startSnap = endSnap لا يمكن المقارنة
-        if (startSnap.date === endSnap.date) {
-            return { error: `جميع البيانات المتاحة تعود لنفس التاريخ (${startSnap.date}). يرجى تحميل بيانات لفترة أخرى للمقارنة.` };
-        }
+        if (startSnap.date === endSnap.date) return { error: `جميع البيانات تعود لنفس التاريخ (${startSnap.date}). يرجى تحميل بيانات لفترة مختلفة.` };
 
         const startMap=new Map(), endMap=new Map();
         (startSnap.projects||[]).forEach(p=>startMap.set(pKey(p),p));
         (endSnap.projects||[]).forEach(p=>endMap.set(pKey(p),p));
-        const sortedTL=[...(projectsDatabase.timeline||[])].sort((a,b)=>new Date(b.date)-new Date(a.date));
+        /* sortedTL من الأقدم للأحدث لاستخراج أول ظهور للحالة */
+        const sortedTL=[...(projectsDatabase.timeline||[])].sort((a,b)=>a.date.localeCompare(b.date));
 
-        /* 1) مشاريع تحدثت نسب إنجازها — مطابق generateProgressReport */
+        /* أول snapshot حيث تنطبق checkFn على المشروع ذي المفتاح k */
+        function firstStatusDate(k, checkFn) {
+            for (const e of sortedTL) {
+                const prj = e.projects.find(p=>pKey(p)===k);
+                if (prj && checkFn(prj)) {
+                    /* نُفضّل statusDate المخزون في السجل، ثم تاريخ الـ snapshot */
+                    const sd = parseDateStr(prj.statusDate);
+                    return sd || e.date;
+                }
+            }
+            return null;
+        }
+
+        /* 1) مشاريع تحدثت نسب إنجازها */
         const progressProjects=[];
         new Set([...startMap.keys(),...endMap.keys()]).forEach(k=>{
             let pEnd=endMap.get(k), pStart=startMap.get(k);
-            if(!pEnd){ for(const e of sortedTL){ if(e.date<=monthEndStr){ const f=e.projects.find(p=>pKey(p)===k); if(f){pEnd=f;break;} } } }
+            if(!pEnd){ for(let i=sortedTL.length-1;i>=0;i--){ if(sortedTL[i].date<=endDateStr){ const f=sortedTL[i].projects.find(p=>pKey(p)===k); if(f){pEnd=f;break;} } } }
             if(!pEnd||!pStart) return;
+            if(branchFilter && pEnd.executingEntity!==branchFilter) return;
             const ep=calcProgress(pEnd), sp=calcProgress(pStart), diff=ep-sp;
             if(diff>0) progressProjects.push({
                 projectNumber:pEnd.projectNumber, projectName:pEnd.projectName,
                 executingEntity:pEnd.executingEntity, projectType:pEnd.projectType,
                 status:pEnd.status, startProg:sp, endProg:ep, diff,
-                planFrom:pEnd.planFrom, planTo:pEnd.planTo,
-                civilProgress:pEnd.civilProgress, technicalProgress:pEnd.technicalProgress,
+                planFrom:parseDateStr(pEnd.planFrom), planTo:parseDateStr(pEnd.planTo),
             });
         });
         progressProjects.sort((a,b)=>b.diff-a.diff);
 
-        /* 2) مشاريع منجزة — مطابق generateCompletedProjectsReport */
+        /* 2) مشاريع منجزة */
         const completedProjects=[];
         endMap.forEach((pEnd,k)=>{
             const pStart=startMap.get(k);
             if(!isCompleted(pEnd)||!pStart||!isInProgress(pStart)) return;
-            let actualEnd=null;
-            for(let i=sortedTL.length-1;i>=0;i--){
-                const e=sortedTL[i], prj=e.projects.find(p=>pKey(p)===k);
-                if(prj&&isCompleted(prj)) actualEnd=new Date(e.date);
-            }
-            const planEnd=pEnd.planTo?new Date(pEnd.planTo):null;
-            const devDays=(planEnd&&actualEnd)?daysDiff(planEnd,actualEnd):null;
+            if(branchFilter && pEnd.executingEntity!==branchFilter) return;
+            const planEndStr   = parseDateStr(pEnd.planTo);
+            const planStartStr = parseDateStr(pEnd.planFrom);
+            const actualEndStr = firstStatusDate(k, isCompleted);
+            const devDays = (planEndStr&&actualEndStr) ? daysDiff(planEndStr,actualEndStr) : null;
             completedProjects.push({
                 projectNumber:pEnd.projectNumber, projectName:pEnd.projectName,
                 executingEntity:pEnd.executingEntity, projectType:pEnd.projectType,
-                status:pEnd.status, planFrom:pEnd.planFrom, planTo:pEnd.planTo,
-                actualEndDate:actualEnd?actualEnd.toISOString().split('T')[0]:null,
-                deviationDays:devDays,
+                status:pEnd.status, planFrom:planStartStr, planTo:planEndStr,
+                actualEndDate:actualEndStr, deviationDays:devDays,
                 civilProgress:pEnd.civilProgress, technicalProgress:pEnd.technicalProgress,
             });
         });
 
-        /* 3) مشاريع انطلقت — مطابق generateStartedProjectsReport */
+        /* 3) مشاريع انطلقت */
         const startedProjects=[];
         endMap.forEach((pEnd,k)=>{
             const pStart=startMap.get(k);
             if(!isInProgress(pEnd)||!pStart||!isNotStarted(pStart)) return;
-            let actualStart=null;
-            for(let i=sortedTL.length-1;i>=0;i--){
-                const e=sortedTL[i], prj=e.projects.find(p=>pKey(p)===k);
-                if(prj&&isInProgress(prj)) actualStart=new Date(e.date);
-            }
-            const planStart=pEnd.planFrom?new Date(pEnd.planFrom):null;
-            const devDays=(planStart&&actualStart)?daysDiff(planStart,actualStart):null;
+            if(branchFilter && pEnd.executingEntity!==branchFilter) return;
+            const planStartStr = parseDateStr(pEnd.planFrom);
+            const planEndStr   = parseDateStr(pEnd.planTo);
+            const actualStartStr = firstStatusDate(k, isInProgress);
+            const devDays = (planStartStr&&actualStartStr) ? daysDiff(planStartStr,actualStartStr) : null;
             startedProjects.push({
                 projectNumber:pEnd.projectNumber, projectName:pEnd.projectName,
                 executingEntity:pEnd.executingEntity, projectType:pEnd.projectType,
-                status:pEnd.status, planFrom:pEnd.planFrom, planTo:pEnd.planTo,
-                actualStartDate:actualStart?actualStart.toISOString().split('T')[0]:null,
-                deviationDays:devDays,
+                status:pEnd.status, planFrom:planStartStr, planTo:planEndStr,
+                actualStartDate:actualStartStr, deviationDays:devDays,
                 civilProgress:pEnd.civilProgress, technicalProgress:pEnd.technicalProgress,
             });
         });
 
         /* 4+5) خلاصة الفروع والأنواع */
         const branchSummary={}, typeSummary={};
-        const addTo=(obj,key,field)=>{
-            if(!obj[key]) obj[key]={progress:0,completed:0,started:0};
-            obj[key][field]++;
-        };
+        const addTo=(obj,key,field)=>{ if(!obj[key]) obj[key]={progress:0,completed:0,started:0}; obj[key][field]++; };
         progressProjects.forEach(p=>{ addTo(branchSummary,p.executingEntity||'غير محدد','progress'); addTo(typeSummary,p.projectType||'غير محدد','progress'); });
         completedProjects.forEach(p=>{ addTo(branchSummary,p.executingEntity||'غير محدد','completed'); addTo(typeSummary,p.projectType||'غير محدد','completed'); });
         startedProjects.forEach(p=>{ addTo(branchSummary,p.executingEntity||'غير محدد','started'); addTo(typeSummary,p.projectType||'غير محدد','started'); });
 
         return {
-            year, monthIdx, monthName:ARABIC_MONTHS[monthIdx],
-            startSnapDate:startSnap.date, endSnapDate:endSnap.date,
+            label, startSnapDate:startSnap.date, endSnapDate:endSnap.date, branchFilter,
             progressProjects, completedProjects, startedProjects,
             branchSummary, typeSummary,
-            savedNotes:loadNotes(year,monthIdx),
+            allProjNotes: loadAllProjNotes(),
         };
     }
 
     /* ── رندر HTML ── */
     function renderReportHTML(d) {
-        const note = d.savedNotes || '';
+        const allNotes = d.allProjNotes || {};
+        const pnotesKeyJS = PNOTES_KEY;
 
         function deviationCell(days) {
-            if (days === null) return '—';
+            if (days === null) return '<span style="color:#94a3b8;">—</span>';
             if (days > 0) return `<span style="color:#dc2626;font-weight:700;">متأخر ${days} يوم</span>`;
             if (days < 0) return `<span style="color:#059669;font-weight:700;">مبكر ${Math.abs(days)} يوم</span>`;
             return `<span style="color:#059669;font-weight:700;">وفق التخطيط ✔</span>`;
         }
 
+        function noteRow(projKey, projName, noteVal) {
+            const esc = (noteVal||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const kAttr = (projKey||'').replace(/"/g,'&quot;');
+            return `<tr class="note-row"><td colspan="9" style="background:#fffbeb;padding:8px 14px;">
+                <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+                    <span style="font-weight:700;color:#92400e;white-space:nowrap;font-size:.8rem;padding-top:8px;">📝 ${projName}:</span>
+                    <textarea data-pk="${kAttr}" class="pna" style="flex:1;min-width:260px;padding:7px 10px;border:1px solid #f59e0b;border-radius:6px;font-family:Cairo;font-size:.82rem;resize:vertical;min-height:52px;direction:rtl;background:#fffdf5;" placeholder="سبب الانحراف / ملاحظات المهندس...">${esc}</textarea>
+                    <button data-pk="${kAttr}" class="pns" style="padding:7px 16px;background:#d97706;color:#fff;border:0;border-radius:6px;cursor:pointer;font-family:Cairo;font-size:.82rem;white-space:nowrap;height:fit-content;margin-top:2px;">💾 حفظ</button>
+                </div></td></tr>`;
+        }
+
         function progressTbl(list) {
-            if (!list.length) return '<p style="padding:10px;color:#64748b;">لا توجد مشاريع في هذه الفترة.</p>';
+            if (!list.length) return '<p style="padding:12px;color:#64748b;">لا توجد مشاريع في هذه الفترة.</p>';
             return `<table class="mr-tbl"><thead><tr>
                 <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th><th>الحالة</th>
-                <th>بداية الشهر</th><th>نهاية الشهر</th><th>التقدم ▲</th>
+                <th>بداية الفترة %</th><th>نهاية الفترة %</th><th>التقدم ▲</th>
             </tr></thead><tbody>${list.map(p=>`<tr>
-                <td>${p.projectNumber||'—'}</td><td style="text-align:right;">${p.projectName||'—'}</td>
+                <td>${p.projectNumber||'—'}</td>
+                <td style="text-align:right;max-width:220px;">${p.projectName||'—'}</td>
                 <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td><td>${p.status||'—'}</td>
                 <td style="color:#1e3a8a;font-weight:700;">${pct(p.startProg)}</td>
                 <td style="color:#059669;font-weight:700;">${pct(p.endProg)}</td>
@@ -27188,39 +27201,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function completedTbl(list) {
-            if (!list.length) return '<p style="padding:10px;color:#64748b;">لا توجد مشاريع منجزة في هذه الفترة.</p>';
-            return `<table class="mr-tbl"><thead><tr>
+            if (!list.length) return '<p style="padding:12px;color:#64748b;">لا توجد مشاريع منجزة في هذه الفترة.</p>';
+            const rows = list.map(p => {
+                const k = (p.projectNumber||p.projectName||'').toString().trim();
+                return `<tr data-dev="${p.deviationDays}">
+                    <td>${p.projectNumber||'—'}</td>
+                    <td style="text-align:right;max-width:220px;">${p.projectName||'—'}</td>
+                    <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td>
+                    <td>${p.planFrom?fmtDate(p.planFrom):'—'}</td>
+                    <td>${p.planTo?fmtDate(p.planTo):'—'}</td>
+                    <td>${p.actualEndDate?fmtDate(p.actualEndDate):'—'}</td>
+                    <td class="dev-cell">${deviationCell(p.deviationDays)}</td>
+                </tr>${noteRow(k, p.projectName||p.projectNumber||'', allNotes[k]||'')}`;
+            }).join('');
+            return `<table class="mr-tbl" id="tbl-completed"><thead><tr>
                 <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th>
                 <th>بدء مخطط</th><th>انتهاء مخطط</th><th>انتهاء فعلي</th><th>الانحراف</th>
-            </tr></thead><tbody>${list.map(p=>`<tr>
-                <td>${p.projectNumber||'—'}</td><td style="text-align:right;">${p.projectName||'—'}</td>
-                <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td>
-                <td>${p.planFrom?fmtDate(p.planFrom):'—'}</td>
-                <td>${p.planTo?fmtDate(p.planTo):'—'}</td>
-                <td>${p.actualEndDate?fmtDate(p.actualEndDate):'—'}</td>
-                <td>${deviationCell(p.deviationDays)}</td>
-            </tr>`).join('')}</tbody></table>`;
+            </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
         function startedTbl(list) {
-            if (!list.length) return '<p style="padding:10px;color:#64748b;">لا توجد مشاريع انطلقت في هذه الفترة.</p>';
-            return `<table class="mr-tbl"><thead><tr>
+            if (!list.length) return '<p style="padding:12px;color:#64748b;">لا توجد مشاريع انطلقت في هذه الفترة.</p>';
+            const rows = list.map(p => {
+                const k = (p.projectNumber||p.projectName||'').toString().trim();
+                return `<tr data-dev="${p.deviationDays}">
+                    <td>${p.projectNumber||'—'}</td>
+                    <td style="text-align:right;max-width:220px;">${p.projectName||'—'}</td>
+                    <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td>
+                    <td>${p.planFrom?fmtDate(p.planFrom):'—'}</td>
+                    <td>${p.planTo?fmtDate(p.planTo):'—'}</td>
+                    <td>${p.actualStartDate?fmtDate(p.actualStartDate):'—'}</td>
+                    <td class="dev-cell">${deviationCell(p.deviationDays)}</td>
+                </tr>${noteRow(k, p.projectName||p.projectNumber||'', allNotes[k]||'')}`;
+            }).join('');
+            return `<table class="mr-tbl" id="tbl-started"><thead><tr>
                 <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th>
-                <th>بدء مخطط</th><th>بدء فعلي</th><th>الانحراف</th>
-            </tr></thead><tbody>${list.map(p=>`<tr>
-                <td>${p.projectNumber||'—'}</td><td style="text-align:right;">${p.projectName||'—'}</td>
-                <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td>
-                <td>${p.planFrom?fmtDate(p.planFrom):'—'}</td>
-                <td>${p.actualStartDate?fmtDate(p.actualStartDate):'—'}</td>
-                <td>${deviationCell(p.deviationDays)}</td>
-            </tr>`).join('')}</tbody></table>`;
+                <th>بدء مخطط</th><th>انتهاء مخطط</th><th>بدء فعلي</th><th>الانحراف</th>
+            </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
         function summaryTbl(summary, labelCol) {
             const entries=Object.entries(summary).sort((a,b)=>(b[1].progress+b[1].completed*2+b[1].started)-(a[1].progress+a[1].completed*2+a[1].started));
             if (!entries.length) return '<p style="color:#64748b;">لا توجد بيانات.</p>';
             return `<table class="mr-tbl"><thead><tr>
-                <th>${labelCol}</th><th>مشاريع تقدمت 📈</th><th>مشاريع أُنجزت ✅</th><th>مشاريع انطلقت 🚀</th>
+                <th>${labelCol}</th><th>تحدثت 📈</th><th>أُنجزت ✅</th><th>انطلقت 🚀</th>
             </tr></thead><tbody>${entries.map(([lbl,s])=>`<tr>
                 <td style="font-weight:700;text-align:right;">${lbl}</td>
                 <td style="color:#2563eb;font-weight:700;">${s.progress}</td>
@@ -27229,11 +27253,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr>`).join('')}</tbody></table>`;
         }
 
-        const noteEsc = note.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+        const notesJSON = JSON.stringify(d.allProjNotes||{}).replace(/</g,'\\u003c').replace(/>/g,'\\u003e');
+        const pnotesKey = PNOTES_KEY;
 
         return `<!DOCTYPE html><html lang="ar" dir="rtl">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>التقرير الشهري — ${d.monthName} ${d.year}</title>
+<title>التقرير الدوري — ${d.label}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -27241,72 +27266,63 @@ body{font-family:'Cairo',sans-serif;background:#f1f5f9;color:#1e293b;direction:r
 @media print{body{background:#fff;padding:0}.no-print{display:none!important}
   .mr-cover,.mr-kpi,h3.mr-section,table.mr-tbl th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .page-break{page-break-before:always}}
-.mr-cover{background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#2563eb 100%);color:#fff;
-  padding:50px 40px;text-align:center;margin-bottom:30px}
+.mr-cover{background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#2563eb 100%);color:#fff;padding:50px 40px;text-align:center;margin-bottom:30px}
 .mr-cover h1{font-size:2rem;font-weight:900;margin-bottom:8px}
 .mr-cover h2{font-size:1.2rem;opacity:.85;margin-bottom:14px}
 .mr-cover .snap-info{font-size:.75rem;opacity:.6;margin-top:6px}
 .kpi-row{display:flex;gap:16px;flex-wrap:wrap;margin:0 30px 28px;justify-content:center}
-.mr-kpi{flex:1;min-width:160px;max-width:230px;border-radius:14px;padding:22px 18px;
-  text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.10);color:#fff}
+.mr-kpi{flex:1;min-width:160px;max-width:220px;border-radius:14px;padding:22px 18px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.10);color:#fff}
 .mr-kpi.blue{background:linear-gradient(135deg,#1e40af,#3b82f6)}
 .mr-kpi.green{background:linear-gradient(135deg,#065f46,#10b981)}
 .mr-kpi.amber{background:linear-gradient(135deg,#92400e,#f59e0b)}
 .mr-kpi .kpi-num{font-size:2.6rem;font-weight:900;line-height:1}
 .mr-kpi .kpi-lbl{font-size:.78rem;margin-top:8px;opacity:.9;line-height:1.4}
 h3.mr-section{margin:0 30px 14px;padding:10px 18px;border-radius:8px;font-size:1rem;font-weight:700;
-  background:linear-gradient(90deg,#1e3a8a,#2563eb);color:#fff}
+  background:linear-gradient(90deg,#1e3a8a,#2563eb);color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.dev-filter-btn{padding:5px 14px;background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.5);border-radius:20px;cursor:pointer;font-family:Cairo;font-size:.8rem;font-weight:700;transition:all .2s;}
+.dev-filter-btn.active{background:#dc2626;border-color:#dc2626;}
 .tbl-wrap{margin:0 30px 28px;overflow-x:auto}
-table.mr-tbl{width:100%;border-collapse:collapse;font-size:.8rem;background:#fff;
-  border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+table.mr-tbl{width:100%;border-collapse:collapse;font-size:.8rem;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 table.mr-tbl th{background:#1e3a8a;color:#fff;padding:9px 10px;text-align:center;font-weight:700;white-space:nowrap}
 table.mr-tbl td{padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center;vertical-align:middle}
 table.mr-tbl tr:last-child td{border-bottom:none}
-table.mr-tbl tr:nth-child(even) td{background:#f8faff}
-table.mr-tbl tr:hover td{background:#eff6ff}
-.eng-box{margin:0 30px 28px;background:#fff;border-radius:12px;padding:24px;
-  box-shadow:0 2px 12px rgba(0,0,0,.08);border-right:5px solid #1e3a8a}
-.eng-box h4{color:#1e3a8a;font-size:1rem;font-weight:700;margin-bottom:14px}
-.eng-meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
-.eng-meta label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.85rem;color:#374151}
-.eng-meta input,.eng-meta select{padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;
-  font-family:Cairo;font-size:.85rem;min-width:180px}
-.note-area{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;
-  font-family:Cairo;font-size:.85rem;resize:vertical;direction:rtl;min-height:120px;line-height:1.8}
-.note-print{background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;
-  white-space:pre-wrap;font-size:.85rem;min-height:60px;line-height:1.8;margin-top:12px}
+table.mr-tbl tr:not(.note-row):nth-child(4n+1) td,table.mr-tbl tr:not(.note-row):nth-child(4n+2) td{background:#f8faff}
+table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
+.note-row td{border-bottom:2px solid #fde68a!important}
 .sig-row{display:flex;gap:30px;justify-content:space-around;margin:30px 30px 10px;flex-wrap:wrap}
 .sig-box{flex:1;min-width:160px;text-align:center}
 .sig-label{font-weight:700;margin-bottom:50px;color:#475569}
 .sig-line{border-top:1px solid #1f2937;padding-top:4px;font-size:.8rem;color:#64748b}
 .mr-footer{text-align:center;margin-top:20px;color:#94a3b8;font-size:.75rem}
-.print-btn{position:fixed;top:16px;left:16px;z-index:9999;background:#2563eb;color:#fff;
-  padding:10px 20px;border-radius:8px;cursor:pointer;border:none;font-family:Cairo;font-size:.95rem;
-  box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.print-btn{position:fixed;top:16px;left:16px;z-index:9999;background:#2563eb;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;border:none;font-family:Cairo;font-size:.95rem;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .page-break{page-break-before:always}
 </style></head><body>
 <button class="print-btn no-print" onclick="window.print()">🖨️ طباعة / PDF</button>
-
 <div class="mr-cover">
-  <h1>📅 التقرير الشهري للأداء</h1>
-  <h2>${d.monthName} ${d.year}</h2>
-  <div class="snap-info">البيانات: من ${fmtDate(d.startSnapDate)} إلى ${fmtDate(d.endSnapDate)}</div>
+  <h1>📅 التقرير الدوري للأداء</h1>
+  <h2>${d.label}${d.branchFilter ? ' — ' + d.branchFilter : ''}</h2>
+  <div class="snap-info">المقارنة: من ${fmtDate(d.startSnapDate)} إلى ${fmtDate(d.endSnapDate)}</div>
 </div>
-
 <div class="kpi-row">
   <div class="mr-kpi blue"><div class="kpi-num">${d.progressProjects.length}</div><div class="kpi-lbl">📈 مشاريع تحدّثت<br>نسب إنجازها</div></div>
-  <div class="mr-kpi green"><div class="kpi-num">${d.completedProjects.length}</div><div class="kpi-lbl">✅ مشاريع<br>أُنجزت هذا الشهر</div></div>
-  <div class="mr-kpi amber"><div class="kpi-num">${d.startedProjects.length}</div><div class="kpi-lbl">🚀 مشاريع<br>انطلقت هذا الشهر</div></div>
+  <div class="mr-kpi green"><div class="kpi-num">${d.completedProjects.length}</div><div class="kpi-lbl">✅ مشاريع<br>أُنجزت</div></div>
+  <div class="mr-kpi amber"><div class="kpi-num">${d.startedProjects.length}</div><div class="kpi-lbl">🚀 مشاريع<br>انطلقت</div></div>
 </div>
 
 <h3 class="mr-section">1️⃣ المشاريع التي تحدّثت نسب إنجازها (${d.progressProjects.length})</h3>
 <div class="tbl-wrap">${progressTbl(d.progressProjects)}</div>
 
-<h3 class="mr-section page-break">2️⃣ المشاريع المُنجَزة هذا الشهر (${d.completedProjects.length}) — تحليل الانحراف الزمني</h3>
-<div class="tbl-wrap">${completedTbl(d.completedProjects)}</div>
+<h3 class="mr-section page-break">
+  <span>2️⃣ المشاريع المُنجَزة (${d.completedProjects.length}) — تحليل الانحراف الزمني</span>
+  <button class="dev-filter-btn no-print" id="dfb-completed" onclick="toggleDev('completed')">🔴 المنحرفة فقط</button>
+</h3>
+<div class="tbl-wrap" id="wrap-completed">${completedTbl(d.completedProjects)}</div>
 
-<h3 class="mr-section page-break">3️⃣ المشاريع المنطلقة هذا الشهر (${d.startedProjects.length}) — تحليل الانحراف الزمني</h3>
-<div class="tbl-wrap">${startedTbl(d.startedProjects)}</div>
+<h3 class="mr-section page-break">
+  <span>3️⃣ المشاريع المنطلقة (${d.startedProjects.length}) — تحليل الانحراف الزمني</span>
+  <button class="dev-filter-btn no-print" id="dfb-started" onclick="toggleDev('started')">🔴 المنحرفة فقط</button>
+</h3>
+<div class="tbl-wrap" id="wrap-started">${startedTbl(d.startedProjects)}</div>
 
 <h3 class="mr-section page-break">4️⃣ الخلاصة على مستوى الفرع المنفذ</h3>
 <div class="tbl-wrap">${summaryTbl(d.branchSummary,'الفرع المنفذ')}</div>
@@ -27314,63 +27330,46 @@ table.mr-tbl tr:hover td{background:#eff6ff}
 <h3 class="mr-section">5️⃣ الخلاصة على مستوى نوع المشروع</h3>
 <div class="tbl-wrap">${summaryTbl(d.typeSummary,'نوع المشروع')}</div>
 
-<h3 class="mr-section page-break">6️⃣ تدوين المهندس المسؤول — المتابعة والتقييم والانحرافات</h3>
-<div class="eng-box">
-  <h4>📝 سجل المهندس المسؤول عن متابعة ومراقبة المشاريع</h4>
-  <p style="font-size:.82rem;color:#64748b;margin-bottom:14px;line-height:1.7;">
-    يُدوَّن هنا: ملاحظات المهندس — الانحرافات ومبرراتها — المشكلات التي واجهت الفروع — الإجراءات المتخذة — تقييم الأداء.
-    هذا التدوين يُقرّ الانحراف ويُبرره، أو يُفضح التقصير ويُدينه. يُبنى عليه قرارات تصحيحية للإدارة العليا.
-  </p>
-  <div class="eng-meta no-print">
-    <label>اسم المهندس المسؤول<input id="mr-eng-name" type="text" placeholder="أدخل الاسم"></label>
-    <label>التقييم العام للشهر
-      <select id="mr-eng-rating">
-        <option value="">— اختر التقييم —</option>
-        <option>ممتاز ⭐⭐⭐⭐⭐</option><option>جيد جداً ⭐⭐⭐⭐</option>
-        <option>جيد ⭐⭐⭐</option><option>مقبول ⭐⭐</option><option>يحتاج تحسين ⭐</option>
-      </select>
-    </label>
-  </div>
-  <textarea id="mr-note-area" class="note-area no-print" placeholder="مثال:&#10;فرع الشمال — تأخر مشروع (رقم...) 12 يوماً بسبب نقص معدات. تم التنسيق مع المقاول لتسريع الوضع.&#10;فرع الجنوب — أداء ممتاز، 3 مشاريع أُنجزت وفق التخطيط...">${note}</textarea>
-  <div class="no-print" style="margin-top:10px;display:flex;gap:10px;align-items:center;">
-    <button id="mr-save-note" style="background:#1e3a8a;color:#fff;border:0;padding:9px 20px;border-radius:8px;cursor:pointer;font-family:Cairo;font-size:.9rem;font-weight:600;">💾 حفظ التدوين</button>
-    <span id="mr-save-ok" style="font-size:.82rem;color:#059669;display:none;">✔ تم الحفظ بنجاح</span>
-  </div>
-  <!-- للطباعة فقط -->
-  <div id="mr-note-print" class="note-print" style="${note ? '' : 'display:none'}">${noteEsc}</div>
-</div>
-
 <div class="sig-row">
   <div class="sig-box"><div class="sig-label">مُعِدّ التقرير</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
   <div class="sig-box"><div class="sig-label">المهندس المسؤول</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
   <div class="sig-box"><div class="sig-label">مدير القسم</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
   <div class="sig-box"><div class="sig-label">مدير الإدارة</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
 </div>
-<div class="mr-footer">نظام تحليل بيانات المشاريع — ${d.monthName} ${d.year} — إصدار: ${fmtDate(new Date())}</div>
+<div class="mr-footer">نظام تحليل بيانات المشاريع — ${d.label} — إصدار: ${fmtDate(new Date())}</div>
 
 <script>
 (function(){
-  var YEAR=${d.year}, MONTH=${d.monthIdx}, KEY='${DB_NOTES_KEY}';
-  function save(txt){
-    try{ var a=JSON.parse(localStorage.getItem(KEY)||'{}'); a[YEAR+'-'+MONTH]=txt; localStorage.setItem(KEY,JSON.stringify(a)); return true; }
-    catch(e){return false;}
+  var PK='${pnotesKey}';
+  var devState={};
+  function saveNote(key,text){
+    try{var o=JSON.parse(localStorage.getItem(PK)||'{}');o[key]=text;localStorage.setItem(PK,JSON.stringify(o));return true;}catch(e){return false;}
   }
-  var btn=document.getElementById('mr-save-note');
-  var area=document.getElementById('mr-note-area');
-  var ok=document.getElementById('mr-save-ok');
-  var np=document.getElementById('mr-note-print');
-  if(btn&&area){
+  document.querySelectorAll('.pns').forEach(function(btn){
     btn.addEventListener('click',function(){
-      var t=area.value;
-      if(save(t)){
-        if(np){ np.innerHTML=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\n/g,'<br>'); np.style.display=t?'':'none'; }
-        ok.style.display='inline'; setTimeout(function(){ok.style.display='none';},3000);
+      var k=this.getAttribute('data-pk');
+      var area=document.querySelector('.pna[data-pk="'+k+'"]');
+      if(area&&saveNote(k,area.value)){
+        var orig=this.textContent; this.textContent='✔ تم الحفظ'; this.style.background='#059669';
+        var self=this; setTimeout(function(){self.textContent=orig;self.style.background='#d97706';},2200);
       }
     });
-    area.addEventListener('input',function(){
-      if(np){ np.innerHTML=area.value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\n/g,'<br>'); np.style.display=area.value?'':'none'; }
+  });
+  window.toggleDev=function(type){
+    devState[type]=!devState[type];
+    var btn=document.getElementById('dfb-'+type);
+    var wrap=document.getElementById('wrap-'+type);
+    if(!wrap) return;
+    if(btn) btn.classList.toggle('active',devState[type]);
+    wrap.querySelectorAll('table.mr-tbl tbody tr:not(.note-row)').forEach(function(row){
+      var dev=row.getAttribute('data-dev');
+      var isDeviated=(dev!==null&&dev!=='null'&&dev!=='0'&&dev!=='');
+      var show=!devState[type]||isDeviated;
+      row.style.display=show?'':'none';
+      var nr=row.nextElementSibling;
+      if(nr&&nr.classList.contains('note-row')) nr.style.display=show?'':'none';
     });
-  }
+  };
 })();
 <\/script>
 </body></html>`;
@@ -27379,55 +27378,105 @@ table.mr-tbl tr:hover td{background:#eff6ff}
     /* ── نافذة الاختيار ── */
     function openMonthlyReportDialog() {
         document.getElementById('mr-modal')?.remove();
-        const now=new Date(), def=new Date(now.getFullYear(),now.getMonth()-1,1);
-        const monthOpts=ARABIC_MONTHS.map((m,i)=>`<option value="${i}" ${i===def.getMonth()?'selected':''}>${m}</option>`).join('');
-        const yn=now.getFullYear();
-        const yearOpts=[yn-2,yn-1,yn,yn+1].map(y=>`<option value="${y}" ${y===def.getFullYear()?'selected':''}>${y}</option>`).join('');
+
+        const timeline = projectsDatabase.timeline || [];
+        if (!timeline.length) {
+            typeof showNotification==='function'
+                ? showNotification('لا توجد بيانات. يرجى تحميل ملفات البيانات أولاً.','error')
+                : alert('لا توجد بيانات.');
+            return;
+        }
+
+        /* الأشهر المتاحة (YYYY-MM) مرتبة */
+        const monthSet = new Set();
+        timeline.forEach(e=>{ if(e.date) monthSet.add(e.date.substring(0,7)); });
+        const availMonths = [...monthSet].sort();
+
+        /* الفروع المتاحة */
+        const branchSet = new Set();
+        timeline.forEach(e=>(e.projects||[]).forEach(p=>{ if(p.executingEntity) branchSet.add(p.executingEntity); }));
+        const branches = [...branchSet].sort();
+
+        function monthLabel(ym) {
+            const [y,m]=ym.split('-');
+            return ARABIC_MONTHS[parseInt(m,10)-1]+' '+y;
+        }
+
+        const cbsHTML = availMonths.map((ym,i)=>`
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8faff;transition:background .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#f8faff'">
+          <input type="checkbox" class="mr-mcb" value="${ym}" ${i===availMonths.length-1?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#2563eb;">
+          <span style="font-weight:600;color:#1e3a8a;font-size:.88rem;">${monthLabel(ym)}</span>
+        </label>`).join('');
+
+        const branchHTML = `<option value="">— كل الفروع —</option>`+branches.map(b=>`<option value="${b}">${b}</option>`).join('');
 
         const modal=document.createElement('div');
         modal.id='mr-modal';
-        modal.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.65);display:flex;align-items:center;justify-content:center;z-index:10000;font-family:Cairo,sans-serif;';
-        modal.innerHTML=`<div style="background:#fff;border-radius:16px;padding:30px;max-width:500px;width:94%;box-shadow:0 24px 64px rgba(0,0,0,.35);direction:rtl;">
-          <h2 style="margin:0 0 6px;color:#1e3a8a;font-size:1.4rem;font-weight:800;">📅 التقرير الشهري الشامل</h2>
-          <p style="color:#64748b;margin:0 0 18px;font-size:.85rem;line-height:1.6;">اختر الشهر والسنة — سيُنشأ تقرير PDF شامل لكل ما حدث خلال الشهر.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
-            <div><label style="display:block;margin-bottom:6px;font-weight:700;color:#334155;font-size:.9rem;">الشهر</label>
-              <select id="mr-month" style="width:100%;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-family:Cairo;font-size:.95rem;">${monthOpts}</select></div>
-            <div><label style="display:block;margin-bottom:6px;font-weight:700;color:#334155;font-size:.9rem;">السنة</label>
-              <select id="mr-year" style="width:100%;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-family:Cairo;font-size:.95rem;">${yearOpts}</select></div>
+        modal.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.65);display:flex;align-items:center;justify-content:center;z-index:10000;font-family:Cairo,sans-serif;padding:16px;';
+        modal.innerHTML=`<div style="background:#fff;border-radius:16px;padding:28px;max-width:580px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.35);direction:rtl;max-height:92vh;overflow-y:auto;">
+          <h2 style="margin:0 0 4px;color:#1e3a8a;font-size:1.35rem;font-weight:800;">📅 التقرير الدوري الشامل</h2>
+          <p style="color:#64748b;margin:0 0 18px;font-size:.83rem;line-height:1.6;">اختر الأشهر والجهة — يُحلَّل كل ما حدث خلال الفترة المحددة بدقة.</p>
+
+          <div style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+              <label style="font-weight:700;color:#334155;font-size:.9rem;">📆 الأشهر المتاحة في قاعدة البيانات</label>
+              <div style="display:flex;gap:6px;">
+                <button id="mr-sel-all" style="padding:5px 12px;border:1.5px solid #2563eb;background:#fff;color:#2563eb;border-radius:6px;cursor:pointer;font-family:Cairo;font-size:.8rem;font-weight:600;">تحديد الكل</button>
+                <button id="mr-sel-none" style="padding:5px 12px;border:1.5px solid #94a3b8;background:#fff;color:#64748b;border-radius:6px;cursor:pointer;font-family:Cairo;font-size:.8rem;">إلغاء الكل</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:7px;max-height:230px;overflow-y:auto;padding:2px 2px 4px;">${cbsHTML}</div>
           </div>
-          <div style="background:#eff6ff;border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:.8rem;color:#1e40af;line-height:1.8;">
-            <strong>✅ محتوى التقرير:</strong><br>
-            • مشاريع تحدثت نسب إنجازها (مطابق لتقرير المشاريع ذات التقدم)<br>
-            • مشاريع أُنجزت (مطابق لتقرير المشاريع المنجزة) + انحراف زمني<br>
-            • مشاريع انطلقت (مطابق لتقرير المشاريع المنطلقة) + انحراف زمني<br>
-            • خلاصة حسب الفرع ونوع المشروع<br>
-            • خانة تدوين المهندس المسؤول (تُحفظ تلقائياً)
+
+          <div style="margin-bottom:16px;">
+            <label style="display:block;margin-bottom:6px;font-weight:700;color:#334155;font-size:.9rem;">🏢 الجهة المنفذة (اختياري)</label>
+            <select id="mr-branch" style="width:100%;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-family:Cairo;font-size:.93rem;">${branchHTML}</select>
           </div>
+
+          <div id="mr-info" style="background:#eff6ff;border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:.82rem;color:#1e40af;line-height:1.8;min-height:44px;"></div>
+
           <div style="display:flex;gap:10px;justify-content:flex-end;">
             <button id="mr-cancel" style="padding:10px 22px;border:1.5px solid #cbd5e1;background:#fff;border-radius:8px;cursor:pointer;font-family:Cairo;font-size:.9rem;color:#374151;">إلغاء</button>
             <button id="mr-go" style="padding:10px 24px;border:0;background:linear-gradient(90deg,#1e3a8a,#2563eb);color:#fff;border-radius:8px;cursor:pointer;font-family:Cairo;font-size:.95rem;font-weight:700;box-shadow:0 4px 12px rgba(37,99,235,.35);">🚀 إنشاء التقرير</button>
           </div>
         </div>`;
         document.body.appendChild(modal);
+
+        function updateInfo(){
+            const checked=[...modal.querySelectorAll('.mr-mcb:checked')].map(c=>c.value).sort();
+            const box=modal.querySelector('#mr-info');
+            if(!checked.length){ box.innerHTML='<span style="color:#dc2626;">⚠️ يرجى اختيار شهر واحد على الأقل.</span>'; return; }
+            const first=checked[0], last=checked[checked.length-1];
+            const lday=new Date(parseInt(last.split('-')[0]),parseInt(last.split('-')[1]),0).getDate();
+            box.innerHTML=`<strong>✅ الفترة المحددة:</strong> من <strong>${monthLabel(first)}</strong> إلى <strong>${monthLabel(last)}</strong><br>
+            <span style="font-size:.78rem;color:#475569;">نطاق البيانات: ${first+'-01'} → ${last+'-'+pad2(lday)} | أشهر محددة: ${checked.length}</span>`;
+        }
+        modal.querySelectorAll('.mr-mcb').forEach(cb=>cb.addEventListener('change',updateInfo));
+        modal.querySelector('#mr-sel-all').onclick=()=>{ modal.querySelectorAll('.mr-mcb').forEach(c=>c.checked=true); updateInfo(); };
+        modal.querySelector('#mr-sel-none').onclick=()=>{ modal.querySelectorAll('.mr-mcb').forEach(c=>c.checked=false); updateInfo(); };
         modal.querySelector('#mr-cancel').onclick=()=>modal.remove();
-        modal.onclick=(e)=>{if(e.target===modal)modal.remove();};
+        modal.onclick=(e)=>{ if(e.target===modal) modal.remove(); };
+        updateInfo();
+
         modal.querySelector('#mr-go').onclick=()=>{
-            const y=parseInt(modal.querySelector('#mr-year').value,10);
-            const m=parseInt(modal.querySelector('#mr-month').value,10);
+            const checked=[...modal.querySelectorAll('.mr-mcb:checked')].map(c=>c.value).sort();
+            if(!checked.length){ alert('يرجى اختيار شهر واحد على الأقل.'); return; }
+            const branchFilter=modal.querySelector('#mr-branch').value;
+            const first=checked[0], last=checked[checked.length-1];
+            const lday=new Date(parseInt(last.split('-')[0]),parseInt(last.split('-')[1]),0).getDate();
+            const startDateStr=first+'-01';
+            const endDateStr=last+'-'+pad2(lday);
+            const label=checked.length===1 ? monthLabel(first) : (monthLabel(first)+' — '+monthLabel(last));
             modal.remove();
             try{
-                const data=buildReportData(y,m);
-                if(data.error){
-                    typeof showNotification==='function'?showNotification(data.error,'error'):alert(data.error);
-                    return;
-                }
+                const data=buildReportData(startDateStr,endDateStr,label,branchFilter);
+                if(data.error){ typeof showNotification==='function'?showNotification(data.error,'error'):alert(data.error); return; }
                 const html=renderReportHTML(data);
                 const w=window.open('','_blank');
-                if(!w){alert('يرجى السماح بالنوافذ المنبثقة.');return;}
+                if(!w){ alert('يرجى السماح بالنوافذ المنبثقة.'); return; }
                 w.document.write(html); w.document.close();
             }catch(err){
-                console.error('MonthlyReport v2:',err);
+                console.error('MonthlyReport v3:',err);
                 alert('خطأ أثناء توليد التقرير: '+err.message);
             }
         };
@@ -27437,9 +27486,7 @@ table.mr-tbl tr:hover td{background:#eff6ff}
     function injectBtn() {
         if(document.getElementById('mr-fab')) return;
         const btn=document.createElement('button');
-        btn.id='mr-fab';
-        btn.title='التقرير الشهري الشامل';
-        btn.innerHTML='📅 تقرير شهري';
+        btn.id='mr-fab'; btn.title='التقرير الدوري الشامل'; btn.innerHTML='📅 تقرير شهري';
         btn.style.cssText='position:fixed;bottom:22px;left:22px;z-index:9998;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:0;border-radius:50px;padding:14px 22px;font-family:Cairo,sans-serif;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(37,99,235,.4);transition:transform .2s,box-shadow .2s;';
         btn.onmouseenter=()=>{btn.style.transform='translateY(-3px)';btn.style.boxShadow='0 12px 32px rgba(37,99,235,.55)';};
         btn.onmouseleave=()=>{btn.style.transform='translateY(0)';btn.style.boxShadow='0 8px 24px rgba(37,99,235,.4)';};
