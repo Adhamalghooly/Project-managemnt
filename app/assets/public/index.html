@@ -27030,18 +27030,37 @@ document.addEventListener('DOMContentLoaded', () => {
         return (isNaN(a)||isNaN(b)) ? null : Math.round((b-a)/86400000);
     }
 
-    /* تحويل أي قيمة تاريخ (Date object / رقم Excel / نص) إلى YYYY-MM-DD */
+    /* تحويل أي قيمة تاريخ (Date object / رقم Excel / نص) إلى YYYY-MM-DD
+       يستخدم الدالة العالمية parseDate إن وُجدت (نفس منطق التقارير الأخرى)
+       مع تنسيق التاريخ بالتوقيت المحلي تجنباً لإزاحة UTC */
     function parseDateStr(val) {
         if (!val) return null;
-        if (val instanceof Date) return isNaN(val) ? null : val.toISOString().split('T')[0];
-        if (typeof val === 'number' && val > 25000 && val < 100000) {
-            const d = new Date((val - 25569) * 86400000);
-            return isNaN(d) ? null : d.toISOString().split('T')[0];
+        let d;
+        if (typeof parseDate === 'function') {
+            d = parseDate(val);
+        } else {
+            if (val instanceof Date) {
+                d = val;
+            } else {
+                const str = String(val).trim();
+                if (!str) return null;
+                /* رقم Excel صريح أو مخزَّن كنص */
+                const numVal = parseFloat(str);
+                if (!isNaN(numVal) && numVal > 25000 && numVal < 100000 &&
+                    !str.includes('-') && !str.includes('/')) {
+                    const excelEpoch = new Date(1899, 11, 30);
+                    d = new Date(excelEpoch.getTime() + numVal * 24 * 60 * 60 * 1000);
+                } else {
+                    d = new Date(str);
+                }
+            }
         }
-        const str = String(val).trim();
-        if (!str) return null;
-        const d = new Date(str);
-        return isNaN(d) ? null : d.toISOString().split('T')[0];
+        if (!d || isNaN(d.getTime())) return null;
+        const y = d.getFullYear();
+        if (y < 1900 || y > 2100) return null;
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        const dy = String(d.getDate()).padStart(2, '0');
+        return `${y}-${mo}-${dy}`;
     }
 
     /* قراءة وحفظ ملاحظات المشاريع في localStorage */
