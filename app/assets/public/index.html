@@ -27161,11 +27161,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const planStartStr = parseDateStr(pEnd.planFrom);
             const actualEndStr = firstStatusDate(k, isCompleted);
             const devDays = (planEndStr&&actualEndStr) ? daysDiff(planEndStr,actualEndStr) : null;
+            const durCompleted = (planStartStr&&planEndStr) ? daysDiff(planStartStr,planEndStr) : null;
+            const devPctEnd = (devDays!==null && durCompleted && durCompleted>0)
+                ? Math.round(devDays/durCompleted*1000)/10 : null;
             completedProjects.push({
                 projectNumber:pEnd.projectNumber, projectName:pEnd.projectName,
                 executingEntity:pEnd.executingEntity, projectType:pEnd.projectType,
                 status:pEnd.status, planFrom:planStartStr, planTo:planEndStr,
-                actualEndDate:actualEndStr, deviationDays:devDays,
+                actualEndDate:actualEndStr, deviationDays:devDays, devPct:devPctEnd,
                 civilProgress:pEnd.civilProgress, technicalProgress:pEnd.technicalProgress,
             });
         });
@@ -27180,11 +27183,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const planEndStr   = parseDateStr(pEnd.planTo);
             const actualStartStr = firstStatusDate(k, isInProgress);
             const devDays = (planStartStr&&actualStartStr) ? daysDiff(planStartStr,actualStartStr) : null;
+            const durStarted = (planStartStr&&planEndStr) ? daysDiff(planStartStr,planEndStr) : null;
+            const devPctStart = (devDays!==null && durStarted && durStarted>0)
+                ? Math.round(devDays/durStarted*1000)/10 : null;
             startedProjects.push({
                 projectNumber:pEnd.projectNumber, projectName:pEnd.projectName,
                 executingEntity:pEnd.executingEntity, projectType:pEnd.projectType,
                 status:pEnd.status, planFrom:planStartStr, planTo:planEndStr,
-                actualStartDate:actualStartStr, deviationDays:devDays,
+                actualStartDate:actualStartStr, deviationDays:devDays, devPct:devPctStart,
                 civilProgress:pEnd.civilProgress, technicalProgress:pEnd.technicalProgress,
             });
         });
@@ -27196,10 +27202,21 @@ document.addEventListener('DOMContentLoaded', () => {
         completedProjects.forEach(p=>{ addTo(branchSummary,p.executingEntity||'غير محدد','completed'); addTo(typeSummary,p.projectType||'غير محدد','completed'); });
         startedProjects.forEach(p=>{ addTo(branchSummary,p.executingEntity||'غير محدد','started'); addTo(typeSummary,p.projectType||'غير محدد','started'); });
 
+        /* 6) متوسط نسبة الانحراف الزمني */
+        const startDevPcts = startedProjects.filter(p=>p.devPct!==null).map(p=>p.devPct);
+        const avgStartDevPct = startDevPcts.length
+            ? Math.round(startDevPcts.reduce((s,v)=>s+v,0)/startDevPcts.length*10)/10 : null;
+
+        const endDevPcts = completedProjects.filter(p=>p.devPct!==null).map(p=>p.devPct);
+        const avgEndDevPct = endDevPcts.length
+            ? Math.round(endDevPcts.reduce((s,v)=>s+v,0)/endDevPcts.length*10)/10 : null;
+
         return {
             label, startSnapDate:startSnap.date, endSnapDate:endSnap.date, branchFilter,
             progressProjects, completedProjects, startedProjects,
             branchSummary, typeSummary,
+            avgStartDevPct, avgEndDevPct,
+            startDevCount: startDevPcts.length, endDevCount: endDevPcts.length,
             allProjNotes: loadAllProjNotes(),
         };
     }
@@ -27242,6 +27259,13 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr>`).join('')}</tbody></table>`;
         }
 
+        function devPctCell(pct) {
+            if (pct === null || pct === undefined) return '<span style="color:#94a3b8;">—</span>';
+            if (pct > 0) return `<span style="color:#dc2626;font-weight:700;">+${pct}%</span>`;
+            if (pct < 0) return `<span style="color:#059669;font-weight:700;">${pct}%</span>`;
+            return `<span style="color:#059669;font-weight:700;">0%</span>`;
+        }
+
         function completedTbl(list) {
             if (!list.length) return '<p style="padding:12px;color:#64748b;">لا توجد مشاريع منجزة في هذه الفترة.</p>';
             const rows = list.map(p => {
@@ -27254,11 +27278,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${p.planTo?fmtDate(p.planTo):'—'}</td>
                     <td>${p.actualEndDate?fmtDate(p.actualEndDate):'—'}</td>
                     <td class="dev-cell">${deviationCell(p.deviationDays)}</td>
+                    <td>${devPctCell(p.devPct)}</td>
                 </tr>${noteRow(k, p.projectName||p.projectNumber||'', allNotes[k]||'')}`;
             }).join('');
             return `<table class="mr-tbl" id="tbl-completed"><thead><tr>
                 <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th>
                 <th>بدء مخطط</th><th>انتهاء مخطط</th><th>انتهاء فعلي</th><th>الانحراف</th>
+                <th title="الفارق ÷ مدة المشروع">انحراف %</th>
             </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
@@ -27274,11 +27300,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${p.planTo?fmtDate(p.planTo):'—'}</td>
                     <td>${p.actualStartDate?fmtDate(p.actualStartDate):'—'}</td>
                     <td class="dev-cell">${deviationCell(p.deviationDays)}</td>
+                    <td>${devPctCell(p.devPct)}</td>
                 </tr>${noteRow(k, p.projectName||p.projectNumber||'', allNotes[k]||'')}`;
             }).join('');
             return `<table class="mr-tbl" id="tbl-started"><thead><tr>
                 <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th>
                 <th>بدء مخطط</th><th>انتهاء مخطط</th><th>بدء فعلي</th><th>الانحراف</th>
+                <th title="الفارق ÷ مدة المشروع">انحراف %</th>
             </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
@@ -27317,6 +27345,8 @@ body{font-family:'Cairo',sans-serif;background:#f1f5f9;color:#1e293b;direction:r
 .mr-kpi.blue{background:linear-gradient(135deg,#1e40af,#3b82f6)}
 .mr-kpi.green{background:linear-gradient(135deg,#065f46,#10b981)}
 .mr-kpi.amber{background:linear-gradient(135deg,#92400e,#f59e0b)}
+.mr-kpi.red{background:linear-gradient(135deg,#7f1d1d,#dc2626)}
+.mr-kpi.purple{background:linear-gradient(135deg,#4c1d95,#7c3aed)}
 .mr-kpi .kpi-num{font-size:2.6rem;font-weight:900;line-height:1}
 .mr-kpi .kpi-lbl{font-size:.78rem;margin-top:8px;opacity:.9;line-height:1.4}
 h3.mr-section{margin:0 30px 14px;padding:10px 18px;border-radius:8px;font-size:1rem;font-weight:700;
@@ -27349,6 +27379,14 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
   <div class="mr-kpi blue"><div class="kpi-num">${d.progressProjects.length}</div><div class="kpi-lbl">📈 مشاريع تحدّثت<br>نسب إنجازها</div></div>
   <div class="mr-kpi green"><div class="kpi-num">${d.completedProjects.length}</div><div class="kpi-lbl">✅ مشاريع<br>أُنجزت</div></div>
   <div class="mr-kpi amber"><div class="kpi-num">${d.startedProjects.length}</div><div class="kpi-lbl">🚀 مشاريع<br>انطلقت</div></div>
+  <div class="mr-kpi red">
+    <div class="kpi-num" style="font-size:1.9rem;">${d.avgStartDevPct===null ? '—' : (d.avgStartDevPct>0?'+':'')+d.avgStartDevPct+'%'}</div>
+    <div class="kpi-lbl">⏱️ متوسط انحراف<br>تاريخ البدء<br><span style="font-size:.7rem;opacity:.8;">(${d.startDevCount} مشروع)</span></div>
+  </div>
+  <div class="mr-kpi purple">
+    <div class="kpi-num" style="font-size:1.9rem;">${d.avgEndDevPct===null ? '—' : (d.avgEndDevPct>0?'+':'')+d.avgEndDevPct+'%'}</div>
+    <div class="kpi-lbl">🏁 متوسط انحراف<br>تاريخ الانتهاء<br><span style="font-size:.7rem;opacity:.8;">(${d.endDevCount} مشروع)</span></div>
+  </div>
 </div>
 
 <h3 class="mr-section">1️⃣ المشاريع التي تحدّثت نسب إنجازها (${d.progressProjects.length})</h3>
