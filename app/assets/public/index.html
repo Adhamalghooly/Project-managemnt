@@ -3662,14 +3662,14 @@ tbody tr:hover {
                     <!-- الرسم الأول: نسبة مشاريع لم تبدأ لأكثر من شهر -->
                     <div class="report-card" style="margin-bottom: 40px; padding: 25px; border-right: 8px solid #3498db; background: var(--bg-card);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid var(--light); padding-bottom: 15px;">
-                            <h3 id="notStartedDelayedChart-title" style="margin:0; color: var(--primary); font-size: 1.4rem;">📈 نسبة مشاريع لم تبدأ لأكثر من شهر</h3>
+                            <h3 id="notStartedDelayedChart-title" style="margin:0; color: var(--primary); font-size: 1.4rem;">📈 نسبة مشاريع لم تبدأ لأكثر من سنة</h3>
                             <button class="btn btn-info" onclick="PrintUtils.printChart('notStartedDelayedChart', document.getElementById('notStartedDelayedChart-title').textContent)" style="background: #3498db; color: white;">🖨️ طباعة التقرير البياني</button>
                         </div>
                         <div style="height: 500px; width: 100%; background: #fff; border-radius: 10px; padding: 10px;">
                             <canvas id="notStartedDelayedChart"></canvas>
                         </div>
                         <p style="margin-top: 20px; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
-                            <strong>وصف المؤشر:</strong> يوضح نسبة المشاريع التي بقيت في حالة "لم تبدأ" لمدة تزيد عن شهر من تاريخ التكليف، مما يعكس التأخير في بدء التنفيذ.
+                            <strong>وصف المؤشر:</strong> يوضح نسبة المشاريع التي بقيت في حالة "لم تبدأ" لمدة تزيد عن سنة من تاريخ التكليف، مما يعكس التأخير الكبير في بدء التنفيذ.
                         </p>
                     </div>
 
@@ -5602,7 +5602,7 @@ const StatsCenter = {
                 if (isNaN(assignDate.getTime())) return false;
                 const diffDays = Math.floor((today - assignDate) / (1000 * 60 * 60 * 24));
                 const isVip = (p.projectType || '').toLowerCase().includes('vip') || (p.projectName || '').toLowerCase().includes('vip');
-                return isVip ? diffDays > 10 : diffDays > 30;
+                return isVip ? diffDays > 180 : diffDays > 365;
             }).length;
 
             const notStartedRatio = notStarted.length > 0 ? (delayedNotStarted / notStarted.length) * 100 : 0;
@@ -5694,13 +5694,13 @@ const StatsCenter = {
             if (el) el.textContent = base + branchSuffix;
         };
 
-        updateTitle('notStartedDelayedChart', '📈 نسبة مشاريع لم تبدأ لأكثر من شهر');
+        updateTitle('notStartedDelayedChart', '📈 نسبة مشاريع لم تبدأ لأكثر من سنة');
         updateTitle('noUpdateChart', '📉 نسبة مشاريع بدون تحديث');
         updateTitle('expiredOngoingChart', '⚠️ نسبة مشاريع جارية انتهى تزمينها');
         updateTitle('preAuditDelayedChart', '⏳ نسبة فحص أولي لأكثر من شهرين');
         updateTitle('completedWithNotesChart', '✅ مشاريع منجزة مع ملاحظات فنية');
 
-        this.renderLineChart('notStartedDelayedChart', labels, notStartedDelayedData, 'نسبة لم تبدأ > شهر (%)', '#3498db');
+        this.renderLineChart('notStartedDelayedChart', labels, notStartedDelayedData, 'نسبة لم تبدأ > سنة (%)', '#3498db');
         this.renderLineChart('noUpdateChart', labels, noUpdateData, 'نسبة بدون تحديث (%)', '#e74c3c');
         this.renderLineChart('expiredOngoingChart', labels, expiredOngoingData, 'نسبة منتهية التزمين (%)', '#f39c12');
         this.renderLineChart('preAuditDelayedChart', labels, preAuditDelayedData, 'نسبة فحص أولي > شهرين (%)', '#2c3e50');
@@ -10167,6 +10167,7 @@ ${tableEl.outerHTML}
                             <th>نوع المشروع</th>
                             <th>الإنجاز المدني</th>
                             <th>الإنجاز الفني</th>
+                            <th>الورش</th>
                             <th>الحالة الفعلية</th>
                             <th>تعديل</th>
                         </tr>
@@ -10184,6 +10185,7 @@ ${tableEl.outerHTML}
             tableHtml += `<td>${project.projectType || '-'}</td>`;
             tableHtml += `<td>${formatPercent(project.civilProgress)}</td>`;
             tableHtml += `<td>${formatPercent(project.technicalProgress)}</td>`;
+            tableHtml += `<td>${formatPercent(project.worksProgress)}</td>`;
             tableHtml += `<td><span class="classification-badge badge-info">${project.actualStatus}</span></td>`;
             tableHtml += `<td><button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="ActualStatusManager.openEditModal('${project.projectNumber}')">✏️ تعديل</button></td>`;
             tableHtml += '</tr>';
@@ -13503,6 +13505,7 @@ const PrintUtils = {
                 <td>${p.executingEntity || '-'}</td>
                 <td>${formatPercent(p.civilProgress)}</td>
                 <td>${formatPercent(p.technicalProgress)}</td>
+                <td>${formatPercent(p.worksProgress)}</td>
             </tr>
         `).join('');
         
@@ -13538,6 +13541,7 @@ const PrintUtils = {
                             <th>الجهة المنفذة</th>
                             <th>الإنجاز المدني</th>
                             <th>الإنجاز الفني</th>
+                            <th>الورش</th>
                         </tr>
                     </thead>
                     <tbody>${tableHtml}</tbody>
@@ -13600,7 +13604,7 @@ const PrintUtils = {
                     <div class="kpi-card"><div class="kpi-value">${avgProgress.toFixed(1)}%</div><div class="kpi-label">متوسط الإنجاز</div></div>
                 </div>
                 <table>
-                    <thead><tr><th>رقم</th><th>اسم المشروع</th><th>الحالة</th><th>الجهة</th><th>مدني</th><th>فني</th></tr></thead>
+                    <thead><tr><th>رقم</th><th>اسم المشروع</th><th>الحالة</th><th>الجهة</th><th>مدني</th><th>فني</th><th>ورش</th></tr></thead>
                     <tbody>
                         ${projects.slice(0, 50).map(p => `
                             <tr>
@@ -13610,6 +13614,7 @@ const PrintUtils = {
                                 <td>${p.executingEntity || '-'}</td>
                                 <td>${formatPercent(p.civilProgress)}</td>
                                 <td>${formatPercent(p.technicalProgress)}</td>
+                                <td>${formatPercent(p.worksProgress)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -27270,21 +27275,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!list.length) return '<p style="padding:12px;color:#64748b;">لا توجد مشاريع منجزة في هذه الفترة.</p>';
             const rows = list.map(p => {
                 const k = (p.projectNumber||p.projectName||'').toString().trim();
+                const esc = (allNotes[k]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const kAttr = k.replace(/"/g,'&quot;');
                 return `<tr data-dev="${p.deviationDays}">
                     <td>${p.projectNumber||'—'}</td>
                     <td style="text-align:right;max-width:220px;">${p.projectName||'—'}</td>
                     <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td>
+                    <td>${p.status||'—'}</td>
                     <td>${p.planFrom?fmtDate(p.planFrom):'—'}</td>
                     <td>${p.planTo?fmtDate(p.planTo):'—'}</td>
                     <td>${p.actualEndDate?fmtDate(p.actualEndDate):'—'}</td>
                     <td class="dev-cell">${deviationCell(p.deviationDays)}</td>
                     <td>${devPctCell(p.devPct)}</td>
-                </tr>${noteRow(k, p.projectName||p.projectNumber||'', allNotes[k]||'')}`;
+                    <td style="min-width:170px;vertical-align:top;padding:4px;">
+                        <textarea data-pk="${kAttr}" class="pna" style="width:100%;padding:5px 8px;border:1px solid #f59e0b;border-radius:4px;font-family:Cairo;font-size:.78rem;resize:vertical;min-height:42px;direction:rtl;background:#fffdf5;" placeholder="ملاحظات المهندس...">${esc}</textarea>
+                        <button data-pk="${kAttr}" class="pns" style="margin-top:2px;padding:3px 10px;background:#d97706;color:#fff;border:0;border-radius:4px;cursor:pointer;font-family:Cairo;font-size:.78rem;width:100%;">💾 حفظ</button>
+                    </td>
+                </tr>`;
             }).join('');
             return `<table class="mr-tbl" id="tbl-completed"><thead><tr>
-                <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th>
+                <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th><th>الحالة</th>
                 <th>بدء مخطط</th><th>انتهاء مخطط</th><th>انتهاء فعلي</th><th>الانحراف</th>
                 <th title="الفارق ÷ مدة المشروع">انحراف %</th>
+                <th>تدوينة المهندس</th>
             </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
@@ -27292,21 +27305,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!list.length) return '<p style="padding:12px;color:#64748b;">لا توجد مشاريع انطلقت في هذه الفترة.</p>';
             const rows = list.map(p => {
                 const k = (p.projectNumber||p.projectName||'').toString().trim();
+                const esc = (allNotes[k]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const kAttr = k.replace(/"/g,'&quot;');
                 return `<tr data-dev="${p.deviationDays}">
                     <td>${p.projectNumber||'—'}</td>
                     <td style="text-align:right;max-width:220px;">${p.projectName||'—'}</td>
                     <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td>
+                    <td>${p.status||'—'}</td>
                     <td>${p.planFrom?fmtDate(p.planFrom):'—'}</td>
                     <td>${p.planTo?fmtDate(p.planTo):'—'}</td>
                     <td>${p.actualStartDate?fmtDate(p.actualStartDate):'—'}</td>
                     <td class="dev-cell">${deviationCell(p.deviationDays)}</td>
                     <td>${devPctCell(p.devPct)}</td>
-                </tr>${noteRow(k, p.projectName||p.projectNumber||'', allNotes[k]||'')}`;
+                    <td style="min-width:170px;vertical-align:top;padding:4px;">
+                        <textarea data-pk="${kAttr}" class="pna" style="width:100%;padding:5px 8px;border:1px solid #f59e0b;border-radius:4px;font-family:Cairo;font-size:.78rem;resize:vertical;min-height:42px;direction:rtl;background:#fffdf5;" placeholder="ملاحظات المهندس...">${esc}</textarea>
+                        <button data-pk="${kAttr}" class="pns" style="margin-top:2px;padding:3px 10px;background:#d97706;color:#fff;border:0;border-radius:4px;cursor:pointer;font-family:Cairo;font-size:.78rem;width:100%;">💾 حفظ</button>
+                    </td>
+                </tr>`;
             }).join('');
             return `<table class="mr-tbl" id="tbl-started"><thead><tr>
-                <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th>
+                <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th><th>الحالة</th>
                 <th>بدء مخطط</th><th>انتهاء مخطط</th><th>بدء فعلي</th><th>الانحراف</th>
                 <th title="الفارق ÷ مدة المشروع">انحراف %</th>
+                <th>تدوينة المهندس</th>
             </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
