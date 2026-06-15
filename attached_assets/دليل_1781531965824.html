@@ -1,0 +1,2086 @@
+// نص الدليل الإرشادي الشامل - يُولد ملف HTML
+
+const fs = require('fs');
+
+const html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الدليل الإرشادي الشامل - نظام تحليل وإدارة المشاريع</title>
+<style>
+  :root {
+    --primary: #1a3c6e;
+    --secondary: #2980b9;
+    --accent: #27ae60;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --info: #8e44ad;
+    --light: #ecf0f1;
+    --dark: #2c3e50;
+    --card-bg: #ffffff;
+    --body-bg: #f4f6f9;
+    --border: #dde3ec;
+    --text: #2c3e50;
+    --text-muted: #7f8c8d;
+    --shadow: 0 2px 12px rgba(26,60,110,0.10);
+    --shadow-lg: 0 6px 30px rgba(26,60,110,0.16);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Cairo', Arial, sans-serif;
+    background: var(--body-bg);
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 15px;
+  }
+  /* ────── COVER PAGE ────── */
+  .cover {
+    background: linear-gradient(135deg, #0d1f3c 0%, #1a3c6e 40%, #2980b9 80%, #27ae60 100%);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .cover-badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 30px;
+    padding: 8px 24px;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 30px;
+  }
+  .cover h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  .cover h2 {
+    font-size: 1.4rem;
+    font-weight: 400;
+    opacity: 0.9;
+    margin-bottom: 40px;
+  }
+  .cover-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 40px;
+    max-width: 800px;
+  }
+  .cover-stat {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: var(--radius);
+    padding: 20px 15px;
+    text-align: center;
+  }
+  .cover-stat .num { font-size: 2rem; font-weight: 800; }
+  .cover-stat .lbl { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
+  /* ────── NAVIGATION (TOC) ────── */
+  .toc-section {
+    background: white;
+    padding: 60px 80px;
+    page-break-after: always;
+  }
+  .toc-section h2 {
+    color: var(--primary);
+    font-size: 1.8rem;
+    border-bottom: 3px solid var(--secondary);
+    padding-bottom: 15px;
+    margin-bottom: 30px;
+  }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border);
+    text-decoration: none;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+  .toc-item:hover { color: var(--secondary); }
+  .toc-item .toc-num {
+    background: var(--secondary);
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-left: 15px;
+    flex-shrink: 0;
+  }
+  .toc-item .toc-title { flex: 1; font-weight: 600; }
+  .toc-dots { flex: 1; border-bottom: 2px dotted #ccc; margin: 0 15px; height: 1px; }
+  .toc-page { color: var(--text-muted); font-size: 0.9rem; }
+  /* ────── SECTIONS ────── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 50px 40px;
+  }
+  .section-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-radius: var(--radius);
+    padding: 35px 40px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .section-header::after {
+    content: attr(data-icon);
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 4rem;
+    opacity: 0.2;
+  }
+  .section-header .tab-num {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .section-header h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .section-header p { opacity: 0.9; font-size: 1rem; }
+  /* ────── CARDS ────── */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 30px;
+    margin-bottom: 25px;
+    border-right: 5px solid var(--secondary);
+    position: relative;
+  }
+  .card.danger  { border-right-color: var(--danger); }
+  .card.success { border-right-color: var(--accent); }
+  .card.warning { border-right-color: var(--warning); }
+  .card.info    { border-right-color: var(--info); }
+  .card.dark    { border-right-color: var(--dark); }
+  .card h3 {
+    color: var(--primary);
+    font-size: 1.25rem;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card h3 .icon { font-size: 1.4rem; }
+  .card h4 {
+    color: var(--secondary);
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    font-weight: 700;
+  }
+  .card p { margin-bottom: 12px; color: #444; }
+  .card ul, .card ol { padding-right: 25px; margin-bottom: 12px; }
+  .card li { margin-bottom: 8px; }
+  /* ────── FORMULA BOX ────── */
+  .formula-box {
+    background: linear-gradient(135deg, #0d1f3c, #1a3c6e);
+    color: white;
+    border-radius: var(--radius-sm);
+    padding: 20px 25px;
+    margin: 18px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    direction: ltr;
+    text-align: left;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .formula-box .formula-label {
+    color: #81ecec;
+    font-size: 0.8rem;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    direction: rtl;
+    text-align: right;
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+  .formula-box code { color: #fdcb6e; }
+  /* ────── TABLE ────── */
+  .info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .info-table th {
+    background: var(--primary);
+    color: white;
+    padding: 12px 16px;
+    text-align: right;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .info-table td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    vertical-align: top;
+  }
+  .info-table tr:nth-child(even) td { background: #f8faff; }
+  .info-table tr:last-child td { border-bottom: none; }
+  /* ────── BADGES ────── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin: 2px;
+  }
+  .badge-primary { background: #dbeafe; color: #1e40af; }
+  .badge-success { background: #d1fae5; color: #065f46; }
+  .badge-danger  { background: #fee2e2; color: #991b1b; }
+  .badge-warning { background: #fef3c7; color: #92400e; }
+  .badge-info    { background: #ede9fe; color: #5b21b6; }
+  /* ────── STEP BOXES ────── */
+  .steps { margin: 20px 0; }
+  .step {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+  }
+  .step-num {
+    background: var(--secondary);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .step-content { flex: 1; }
+  .step-content strong { color: var(--primary); display: block; margin-bottom: 5px; }
+  /* ────── ALERT ────── */
+  .alert {
+    border-radius: var(--radius-sm);
+    padding: 18px 22px;
+    margin: 18px 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .alert-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+  .alert-content strong { display: block; margin-bottom: 5px; }
+  .alert-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+  .alert-danger  { background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; }
+  .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+  /* ────── DIVIDER ────── */
+  .page-break { page-break-before: always; }
+  .divider {
+    height: 3px;
+    background: linear-gradient(to right, var(--primary), var(--secondary), var(--accent));
+    border-radius: 2px;
+    margin: 40px 0;
+  }
+  /* ────── REPORT CARD ────── */
+  .report-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #234d8f 100%);
+    color: white;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 20px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .report-num {
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .report-body {
+    background: white;
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+  }
+  /* ────── KPI CARDS ────── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+  }
+  .kpi-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 25px 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border-top: 4px solid;
+  }
+  .kpi-card.blue  { border-top-color: #3b82f6; }
+  .kpi-card.green { border-top-color: #10b981; }
+  .kpi-card.red   { border-top-color: #ef4444; }
+  .kpi-card.purple{ border-top-color: #8b5cf6; }
+  .kpi-card .kpi-icon { font-size: 2rem; margin-bottom: 10px; }
+  .kpi-card .kpi-title { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+  .kpi-card .kpi-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+  .kpi-card .kpi-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+  /* ────── CHART DESCRIPTION ────── */
+  .chart-box {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin: 20px 0;
+    box-shadow: var(--shadow);
+  }
+  .chart-title {
+    background: #f8faff;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .chart-body { padding: 25px; }
+  .chart-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+  }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  /* ────── INFOGRAPHIC ────── */
+  .infographic {
+    background: white;
+    border-radius: var(--radius);
+    padding: 30px;
+    margin: 30px 0;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+  }
+  .infographic-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 10px;
+  }
+  .infographic-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+  }
+  .flow-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 15px 0;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .flow-box {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+    text-align: center;
+    min-width: 140px;
+    flex: 1;
+    max-width: 180px;
+  }
+  .flow-box .flow-icon { font-size: 2rem; margin-bottom: 8px; }
+  .flow-box .flow-title { font-size: 0.9rem; font-weight: 700; }
+  .flow-box .flow-sub { font-size: 0.75rem; opacity: 0.85; margin-top: 4px; }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    color: var(--secondary);
+    font-size: 1.5rem;
+  }
+  .engine-card {
+    border: 2px solid;
+    border-radius: var(--radius);
+    padding: 25px;
+    flex: 1;
+    min-width: 250px;
+    max-width: 320px;
+  }
+  .engine-card.stream { border-color: #3b82f6; background: #eff6ff; }
+  .engine-card.classic { border-color: #8b5cf6; background: #f5f3ff; }
+  .engine-card.geo { border-color: #10b981; background: #f0fdf4; }
+  .engine-card h4 { font-size: 1rem; font-weight: 800; margin-bottom: 12px; }
+  .engine-card.stream h4 { color: #1d4ed8; }
+  .engine-card.classic h4 { color: #6d28d9; }
+  .engine-card.geo h4 { color: #065f46; }
+  .scenario-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    justify-content: center;
+  }
+  .scenario-card {
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    flex: 1;
+    min-width: 200px;
+    max-width: 240px;
+    text-align: center;
+  }
+  .scenario-card.s1 { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .scenario-card.s2 { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .scenario-card.s3 { background: #f5f3ff; border: 1px solid #ddd6fe; }
+  .scenario-card .s-icon { font-size: 1.8rem; margin-bottom: 10px; }
+  .scenario-card .s-title { font-weight: 700; margin-bottom: 6px; }
+  .scenario-card .s-desc { font-size: 0.8rem; color: var(--text-muted); }
+  /* ────── PRINT ────── */
+  @media print {
+    .section { padding: 20px; }
+    .card { box-shadow: none; border: 1px solid var(--border); }
+    .section-header { border-radius: 0; }
+  }
+  /* ────── MISC ────── */
+  .highlight { background: #fffde7; border-right: 4px solid var(--warning); padding: 12px 16px; border-radius: var(--radius-sm); margin: 10px 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } .cover-grid { grid-template-columns: 1fr 1fr; } }
+  .color-green { color: #059669; font-weight: 700; }
+  .color-red   { color: #dc2626; font-weight: 700; }
+  .color-orange{ color: #d97706; font-weight: 700; }
+  .color-blue  { color: #2563eb; font-weight: 700; }
+  .separator { height: 2px; background: var(--light); margin: 30px 0; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════ COVER ════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">📘 الدليل الإرشادي الشامل</div>
+  <h1>نظام تحليل وإدارة المشاريع</h1>
+  <h2>دليل تفصيلي كامل لجميع التبويبات والتقارير والرسوم البيانية</h2>
+  <div class="cover-grid">
+    <div class="cover-stat"><div class="num">15+</div><div class="lbl">تبويباً رئيسياً</div></div>
+    <div class="cover-stat"><div class="num">18</div><div class="lbl">تقريراً</div></div>
+    <div class="cover-stat"><div class="num">7</div><div class="lbl">مؤشرات أداء</div></div>
+    <div class="cover-stat"><div class="num">100%</div><div class="lbl">متصفح بلا خادم</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════ TOC ════════════════════════ -->
+<div class="toc-section">
+  <h2>📋 فهرس المحتويات</h2>
+  <a href="#intro" class="toc-item"><span class="toc-num">1</span><span class="toc-title">مقدمة النظام والمعادلات الأساسية</span><span class="toc-dots"></span></a>
+  <a href="#data-mgmt" class="toc-item"><span class="toc-num">2</span><span class="toc-title">📁 إدارة البيانات</span><span class="toc-dots"></span></a>
+  <a href="#reports" class="toc-item"><span class="toc-num">3</span><span class="toc-title">📊 نظام التقارير (18 تقريراً مفصلاً)</span><span class="toc-dots"></span></a>
+  <a href="#kpi" class="toc-item"><span class="toc-num">4</span><span class="toc-title">📈 لوحة مؤشرات الأداء (KPI Dashboard)</span><span class="toc-dots"></span></a>
+  <a href="#visual" class="toc-item"><span class="toc-num">5</span><span class="toc-title">📉 التحليلات المرئية ورسوم S-Curve</span><span class="toc-dots"></span></a>
+  <a href="#perf" class="toc-item"><span class="toc-num">6</span><span class="toc-title">🔍 تحليل الأداء المتقدم (5 رسوم تاريخية)</span><span class="toc-dots"></span></a>
+  <a href="#project-details" class="toc-item"><span class="toc-num">7</span><span class="toc-title">📋 تفاصيل المشروع والتوقعات الذكية</span><span class="toc-dots"></span></a>
+  <a href="#evm" class="toc-item"><span class="toc-num">8</span><span class="toc-title">📊 مؤشرات EVM (القيمة المكتسبة)</span><span class="toc-dots"></span></a>
+  <a href="#stats" class="toc-item"><span class="toc-num">9</span><span class="toc-title">📊 مركز الإحصائيات الذكية</span><span class="toc-dots"></span></a>
+  <a href="#cpm" class="toc-item"><span class="toc-num">10</span><span class="toc-title">⏱️ الزمن الحرج (CPM)</span><span class="toc-dots"></span></a>
+  <a href="#branch-kpi" class="toc-item"><span class="toc-num">11</span><span class="toc-title">📊 مؤشرات الأداء الخاصة بالفروع (7 مؤشرات)</span><span class="toc-dots"></span></a>
+  <a href="#timeline" class="toc-item"><span class="toc-num">12</span><span class="toc-title">🗓️ الخطة الزمنية</span><span class="toc-dots"></span></a>
+  <a href="#geo" class="toc-item"><span class="toc-num">13</span><span class="toc-title">🗺️ إدارة المواقع ومسارات المشاريع</span><span class="toc-dots"></span></a>
+  <a href="#scheduling" class="toc-item"><span class="toc-num">14</span><span class="toc-title">🤖 الجدولة التلقائية ومحرك المسارات</span><span class="toc-dots"></span></a>
+  <a href="#recommendations" class="toc-item"><span class="toc-num">15</span><span class="toc-title">🎯 التوصيات الذكية الموحدة + إنفوجرافيك</span><span class="toc-dots"></span></a>
+</div>
+
+<!-- ════════════════════════ SECTION 1: INTRO ════════════════════════ -->
+<div id="intro" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="🏗️">
+    <span class="tab-num">مقدمة النظام</span>
+    <h2>الفكرة الأساسية والبنية التقنية</h2>
+    <p>فهم آلية العمل والمعادلات الجوهرية قبل الغوص في التفاصيل</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">💡</span> ما هو هذا النظام؟</h3>
+    <p>نظام ويب متكامل يعمل داخل المتصفح بالكامل (HTML + JavaScript) دون أي خادم إنترنت. يختص بتحليل ومتابعة وجدولة المشاريع الإنشائية والتقنية لجهة تنفيذية تضم عدة <strong>فروع (جهات منفذة)</strong> وأنواع مشاريع متنوعة مثل WFBB، أبراج، مباني هاتف ثابت، منظومات طاقة شمسية، نفاذ وكور، قوى وتكييف، وغيرها.</p>
+    <div class="alert alert-info">
+      <span class="alert-icon">💾</span>
+      <div class="alert-content">
+        <strong>التخزين المحلي (IndexedDB)</strong>
+        جميع البيانات تُخزَّن داخل متصفح المستخدم. لا حاجة لاتصال إنترنت بعد تحميل الصفحة، ولكن يجب أخذ نسخ احتياطية دورية لتفادي الضياع عند مسح بيانات المتصفح.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📸</span> مفهوم "اللقطة الزمنية" (Snapshot)</h3>
+    <p>الفكرة المحورية للنظام بأكمله: في كل مرة يرفع المستخدم ملف Excel يحتوي بيانات المشاريع، يُضاف سجل "لقطة" جديدة بتاريخ محدد. مع الوقت تتراكم اللقطات (أسبوعية/شهرية) لتُشكّل <strong>سجلاً زمنياً حياً</strong> يُمكّن النظام من:</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>المقارنة بين تاريخين</strong> — معرفة التقدم المُحقق بين لقطة سابقة وأخرى حالية</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>تتبع مسار مشروع</strong> — رؤية تحول حالة أي مشروع عبر الزمن (لم يبدأ → جاري → منجز)</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>رسم المنحنيات الزمنية</strong> — S-Curve ومنحنيات التطور والتنبؤ بالإنهاء</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📋</span> حقول البيانات الأساسية (Project Object)</h3>
+    <table class="info-table">
+      <thead><tr><th>الحقل</th><th>الوصف</th><th>أهميته</th></tr></thead>
+      <tbody>
+        <tr><td><code>projectNumber</code></td><td>رقم/رمز المشروع</td><td><span class="badge badge-danger">مُعرِّف فريد أساسي</span></td></tr>
+        <tr><td><code>projectName</code></td><td>اسم المشروع</td><td><span class="badge badge-primary">للعرض والبحث</span></td></tr>
+        <tr><td><code>executingEntity</code></td><td>الجهة المنفذة / الفرع</td><td><span class="badge badge-warning">فلتر رئيسي</span></td></tr>
+        <tr><td><code>projectType</code></td><td>نوع المشروع (WFBB، أبراج...)</td><td><span class="badge badge-warning">يحدد معادلة الإنجاز</span></td></tr>
+        <tr><td><code>status</code></td><td>الحالة الرئيسية (لم يبدأ/جاري/منجز...)</td><td><span class="badge badge-danger">أساسي لكل التقارير</span></td></tr>
+        <tr><td><code>civilProgress</code></td><td>نسبة الإنجاز المدني %</td><td><span class="badge badge-primary">مكوّن الوزن الأكبر</span></td></tr>
+        <tr><td><code>technicalProgress</code></td><td>نسبة الإنجاز الفني %</td><td><span class="badge badge-primary">مكوّن ثانوي</span></td></tr>
+        <tr><td><code>worksProgress</code></td><td>نسبة إنجاز الورش %</td><td><span class="badge badge-info">للأنواع المدنية</span></td></tr>
+        <tr><td><code>planFrom / planTo</code></td><td>تواريخ البدء/الانتهاء التخطيطية</td><td><span class="badge badge-warning">لحساب المخطط والتأخير</span></td></tr>
+        <tr><td><code>contractValue</code></td><td>القيمة التعاقدية (الكلفة)</td><td><span class="badge badge-success">للتحليل المالي</span></td></tr>
+        <tr><td><code>assignmentDate</code></td><td>تاريخ التكليف</td><td><span class="badge badge-primary">لحساب عمر المشروع</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card danger">
+    <h3><span class="icon">⚖️</span> المعادلة الجوهرية: نسبة الإنجاز الكلية</h3>
+    <p>هذه المعادلة هي <strong>قلب النظام</strong> وتُستخدم في كل تقرير تقريباً. تُطبَّق خطوتان:</p>
+
+    <h4>الخطوة الأولى — المشاريع "المكتملة"</h4>
+    <div class="formula-box">
+      <div class="formula-label">إذا كانت الحالة تحتوي أي من: "منجز"، "مكتمل"، "مسلم"، "مقفل"، "جاري الاقفال"</div>
+      نسبة الإنجاز = <code>100%</code>  (بلا حساب)
+    </div>
+
+    <h4>الخطوة الثانية — حسب نوع المشروع (3 مجموعات)</h4>
+
+    <table class="info-table">
+      <thead><tr><th>المجموعة</th><th>الأنواع</th><th>المعادلة</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>مجموعة 1</strong></td>
+          <td>WFBB، مباني هاتف ثابت، مباني الأسوار، منظومات الطاقة الشمسية، أبراج، صيانة...</td>
+          <td><code>(مدني × 0.5) + (ورش × 0.3) + (فني × 0.2)</code></td>
+        </tr>
+        <tr>
+          <td><strong>مجموعة 2</strong></td>
+          <td>نفاذ وكور، قوى وتكييف</td>
+          <td><code>الإنجاز الفني فقط (100% وزن)</code></td>
+        </tr>
+        <tr>
+          <td><strong>مجموعة 3</strong> (افتراضي)</td>
+          <td>بقية الأنواع</td>
+          <td><code>(مدني × 4 + فني) ÷ 5</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠️</span>
+      <div class="alert-content"><strong>ملاحظة مهمة:</strong> بعض التبويبات (مثل مؤشرات أداء الفروع) تستخدم نسخة مبسطة من هذه المعادلة تُعامل مجموعة "نفاذ وكور" ضمن الافتراضي — وهذا فرق طفيف لكنه موجود ويُفسّر اختلاف الأرقام بين التبويبات أحياناً.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📈</span> معادلة الإنجاز التخطيطي (S-Curve)</h3>
+    <p>لحساب "كم يجب أن يكون المشروع قد أنجز بحلول تاريخ معين"، يستخدم النظام منحنى S الرياضي:</p>
+    <div class="formula-box">
+      <div class="formula-label">t = نسبة الوقت المنقضي من مدة المشروع (0 إلى 1)</div>
+      القيمة التخطيطية = <code>100 ÷ (1 + e^(-10 × (t - 0.5)))</code>
+    </div>
+    <div class="chart-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#27ae60"></span> منحنى S يبدأ بطيئاً ثم يتسارع في المنتصف ويتباطأ قرب النهاية</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#e74c3c"></span> إذا كان الفعلي أقل من المخطط = تأخر</span>
+    </div>
+  </div>
+
+  <div class="card warning">
+    <h3><span class="icon">🚫</span> المشاريع المستثناة (Excluded Projects)</h3>
+    <p>المشاريع التي حالتها تحتوي على <span class="badge badge-danger">متعثر</span> <span class="badge badge-danger">موقف</span> <span class="badge badge-danger">موقوف</span> تُستثنى تلقائياً من معظم حسابات التقدم والمواعيد، وتظهر فقط في تقرير "مشاريع غير طبيعية" بمركز الإحصائيات.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 2: DATA MANAGEMENT ════════════════════════ -->
+<div id="data-mgmt" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📁">
+    <span class="tab-num">التبويب الأول</span>
+    <h2>📁 إدارة البيانات</h2>
+    <p>نقطة الدخول الأساسية — رفع البيانات وإدارة السجل الزمني والنسخ الاحتياطي</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🎯</span> الغرض من التبويب</h3>
+    <p>هذا هو التبويب الذي يجب البدء منه دائماً. منه تتم جميع عمليات إدخال البيانات وإدارتها: رفع ملفات Excel، تحديد تواريخ البيانات، وإضافة لقطات للسجل الزمني، والنسخ الاحتياطي.</p>
+  </div>
+
+  <div class="card success">
+    <h3><span class="icon">📥</span> خطوات رفع البيانات</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>تحميل ملف Excel (.xlsx أو .xls)</strong>
+          اضغط على منطقة الرفع أو اسحب الملف إليها. إذا احتوى الملف أكثر من ورقة (Sheet)، تظهر قائمة لاختيار الورقة الصحيحة.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>المعالجة التلقائية</strong>
+          يقوم النظام تلقائياً بـ: قراءة الأعمدة وتحويلها لبنية موحدة، معالجة التواريخ (تحويل من Serial Date الإكسل)، تحويل الأرقام العربية (٠-٩) إلى أرقام قابلة للحساب.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>تحديد تاريخ البيانات</strong>
+          حدد التاريخ الذي يمثله هذا الملف (تاريخ آخر تحديث من الميدان، وليس بالضرورة تاريخ اليوم).
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>الإضافة للسجل الزمني</strong>
+          اضغط "إضافة للسجل الزمني" لحفظ اللقطة. إذا كان التاريخ موجوداً مسبقاً، تُستبدل اللقطة القديمة تلقائياً.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3><span class="icon">📊</span> بطاقة حالة البيانات</h3>
+      <p>تعرض ثلاث قيم تتحدث تلقائياً:</p>
+      <ul>
+        <li><strong>عدد نقاط البيانات</strong> — إجمالي اللقطات المخزنة</li>
+        <li><strong>إجمالي المشاريع</strong> — عدد المشاريع في أحدث لقطة</li>
+        <li><strong>آخر تحديث</strong> — تاريخ أحدث لقطة</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="icon">📋</span> جدول السجل الزمني</h3>
+      <p>يعرض كل اللقطات (الأحدث أولاً) بأعمدة:</p>
+      <ul>
+        <li>تاريخ البيانات</li>
+        <li>عدد المشاريع في تلك اللقطة</li>
+        <li>تاريخ الإضافة الفعلي</li>
+        <li>زر حذف (مع تأكيد)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">💾</span> النسخ الاحتياطي — أزرار حيوية لا تهملها!</h3>
+    <table class="info-table">
+      <thead><tr><th>الزر</th><th>ما يفعله</th><th>متى تستخدمه</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>💾 إدارة النسخ الاحتياطية</strong></td>
+          <td>يُصدِّر ملف JSON يحتوي: أسباب عدم البدء، الحالات الفعلية اليدوية، بيانات الزمن الحرج، بيانات الخطة الزمنية، الإحداثيات الجغرافية</td>
+          <td>أسبوعياً أو قبل تحديث المتصفح</td>
+        </tr>
+        <tr>
+          <td><strong>استيراد نسخة احتياطية</strong></td>
+          <td>يُعيد تحميل بيانات من ملف JSON سابق</td>
+          <td>عند الانتقال لجهاز/متصفح آخر</td>
+        </tr>
+        <tr>
+          <td><strong>مسح جميع البيانات</strong></td>
+          <td>يحذف قاعدة البيانات كاملاً بشكل لا رجعة فيه</td>
+          <td>⚠️ بحذر شديد — بعد أخذ نسخة احتياطية</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="alert alert-danger">
+      <span class="alert-icon">🔴</span>
+      <div class="alert-content"><strong>تحذير:</strong> البيانات غير الموجودة في ملفات Excel (أسباب عدم البدء، الحالات اليدوية، بيانات CPM، الخطة الزمنية، الإحداثيات) لا يمكن استعادتها إلا من النسخة الاحتياطية. لا تهمل الضغط على "💾 إدارة النسخ الاحتياطية" بشكل دوري!</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 3: REPORTS ════════════════════════ -->
+<div id="reports" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📊">
+    <span class="tab-num">التبويب الثاني</span>
+    <h2>📊 نظام التقارير</h2>
+    <p>18 تقريراً شاملاً — كل تقرير يُولَّد بضغطة زر ويُعرض في نافذة منبثقة مع الطباعة والتصدير</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🔧</span> شريط الفلاتر العام</h3>
+    <p>في أعلى التبويب يوجد فلتر <strong>"الجهة المنفذة"</strong> وفلتر <strong>"نوع المشروع"</strong>. يؤثران على معظم التقارير. كذلك يوجد زر <strong>"طباعة الشاشة"</strong> يطبع التقرير المعروض بتنسيق احترافي مع العنوان والتاريخ.</p>
+  </div>
+
+  <!-- Report 1 -->
+  <div class="report-header"><div class="report-num">1</div><div><strong>تقييم أداء الفروع (Branch Evaluation)</strong><br><small>درجة شاملة لكل فرع من 100 نقطة</small></div></div>
+  <div class="report-body">
+    <h4>الغرض</h4>
+    <p>تقرير شامل يمنح كل فرع <strong>درجة نهائية من 100</strong> بناءً على 5 محاور، ويُرتّب الفروع من الأفضل للأسوأ أداءً.</p>
+    <h4>المدخلات المطلوبة</h4>
+    <ul><li>التاريخ الحالي (إلزامي)</li><li>التاريخ السابق (اختياري — لحساب التغير بين فترتين)</li></ul>
+    <h4>آلية الحساب — 5 محاور</h4>
+    <table class="info-table">
+      <thead><tr><th>المحور</th><th>النقاط</th><th>المعادلة</th></tr></thead>
+      <tbody>
+        <tr><td>قيمة الأعمال المنفذة</td><td>حتى +40</td><td>(قيمة الفرع ÷ أعلى قيمة بين الفروع) × 40</td></tr>
+        <tr><td>معدل تحديث المشاريع النشطة</td><td>10-40</td><td>نسبة مشاريع تقدمت ÷ إجمالي الجارية × درجات متدرجة</td></tr>
+        <tr><td>خصم مشاريع قرب الإنجاز المتأخرة</td><td>حتى -20</td><td>عدد المشاريع >90% منذ >14 يوم ولم تُنجز</td></tr>
+        <tr><td>خصم المشاريع المتوقفة</td><td>حتى -20</td><td>نسبة مشاريع لم تتغير نسبها >14 يوم</td></tr>
+        <tr><td>خصم "لم تبدأ" متأخرة >شهر</td><td>حتى -15</td><td>عدد المشاريع لم تبدأ بعد >30 يوم من التكليف</td></tr>
+      </tbody>
+    </table>
+    <h4>التصنيف النهائي</h4>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;">
+      <span class="badge" style="background:#d1fae5;color:#065f46;font-size:0.9rem;">⭐ ≥90 — قائد الأداء</span>
+      <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:0.9rem;">✅ ≥75 — أداء قوي</span>
+      <span class="badge" style="background:#fef3c7;color:#92400e;font-size:0.9rem;">🔶 ≥60 — أداء متوازن</span>
+      <span class="badge" style="background:#ffedd5;color:#9a3412;font-size:0.9rem;">⚠️ ≥45 — يحتاج دعم</span>
+      <span class="badge" style="background:#fee2e2;color:#991b1b;font-size:0.9rem;">🔴 &lt;45 — أولوية مراجعة</span>
+    </div>
+    <h4>المخرجات</h4>
+    <p>جدول مرتب تنازلياً يحتوي: اسم الفرع، قيمة الأعمال، عدد الجارية، عدد النشطة، الدرجة، التصنيف.</p>
+  </div>
+
+  <!-- Report 2 -->
+  <div class="report-header"><div class="report-num">2</div><div><strong>ملخص تقدم المشاريع (مصفوفة)</strong><br><small>عدد المشاريع المتقدمة في جدول متقاطع: جهة × نوع</small></div></div>
+  <div class="report-body">
+    <h4>الغرض</h4>
+    <p>مصفوفة تعرض عدد المشاريع التي حصل فيها تقدم بين تاريخين، موزّعة على صفوف (الجهات) وأعمدة (أنواع المشاريع) مع إجماليات.</p>
+    <div class="formula-box">
+      <div class="formula-label">معادلة "هل حصل تقدم؟"</div>
+      متوسط التقدم = <code>((فرق المدني × 2) + فرق الفني) ÷ 3</code>
+      <br>إذا كانت النتيجة &gt; 0 → المشروع "متقدم" يُضاف للمصفوفة
+    </div>
+    <h4>المخرجات</h4>
+    <p>جدول HTML تفاعلي مباشر على الشاشة (ليس نافذة منبثقة). زر "تصدير Excel" يُصدِّر المصفوفة كاملة.</p>
+  </div>
+
+  <!-- Report 3 -->
+  <div class="report-header"><div class="report-num">3</div><div><strong>المشاريع ذات التقدم (Progress Report)</strong><br><small>الأهم والأشمل — مقارنة المخطط بالفعلي مع التكلفة المالية</small></div></div>
+  <div class="report-body">
+    <h4>الغرض</h4>
+    <p>أهم تقرير في النظام: يعرض كل مشروع حصل فيه أي تقدم بين تاريخين، مع مقارنة دقيقة مخطط/فعلي وحساب التكلفة المالية للتقدم لكل مشروع.</p>
+    <h4>المدخلات</h4>
+    <p>التاريخ الحالي + التاريخ السابق (إلزاميان). فلتر الجهة والنوع من الفلاتر العامة.</p>
+    <div class="formula-box">
+      <div class="formula-label">حساب تكلفة التقدم:</div>
+      تكلفة التقدم = <code>القيمة التعاقدية × (فرق نسبة الإنجاز الفعلي ÷ 100)</code>
+    </div>
+    <h4>المؤشرات الشهرية الإضافية (4 مؤشرات)</h4>
+    <table class="info-table">
+      <thead><tr><th>المؤشر</th><th>المعنى</th></tr></thead>
+      <tbody>
+        <tr><td><strong>الالتزام الزمني</strong></td><td>نسبة المشاريع التي "فجوة التنفيذ" ≤ 10%</td></tr>
+        <tr><td><strong>إغلاق المشاريع</strong></td><td>نسبة المُنجز هذا الشهر من المخطط إنجازه</td></tr>
+        <tr><td><strong>سرعة الفرع</strong></td><td>متوسط الفعلي ÷ متوسط المخطط (>1 = أسرع من المخطط)</td></tr>
+        <tr><td><strong>فجوة التنفيذ</strong></td><td>متوسط المخطط − متوسط الفعلي</td></tr>
+      </tbody>
+    </table>
+    <h4>المخرجات — أعمدة الجدول</h4>
+    <p>رقم المشروع، الاسم، الجهة، النوع، الحالة، <span class="color-blue">تخطيطي إجمالي %</span>، <span class="color-green">فعلي إجمالي %</span>، تخطيطي للفترة، فعلي للفترة، تقدم مدني (فرق)، تقدم فني (فرق)، تقدم ورش (فرق)، <span class="color-orange">تكلفة التقدم</span>.</p>
+  </div>
+
+  <!-- Reports 4-5 -->
+  <div class="two-col">
+    <div>
+      <div class="report-header"><div class="report-num">4</div><div><strong>المشاريع المنجزة</strong><br><small>تحولت من "جاري" إلى "منجز" بين تاريخين</small></div></div>
+      <div class="report-body">
+        <p>يعرض فقط المشاريع التي <em>تحوّلت</em> إلى حالة "منجز" خلال الفترة المحددة (وليس كل المنجزات). الشرط: <code>current.status</code> يحتوي "منجز" <strong>و</strong> <code>prev.status</code> يحتوي "جاري".</p>
+      </div>
+    </div>
+    <div>
+      <div class="report-header"><div class="report-num">5</div><div><strong>المشاريع المنطلقة</strong><br><small>تحولت من "لم يبدأ" إلى "جاري" بين تاريخين</small></div></div>
+      <div class="report-body">
+        <p>عكس التقرير السابق: يعرض المشاريع التي <em>بدأت فعلياً</em> خلال الفترة. الشرط: <code>current.status</code> يحتوي "جاري" <strong>و</strong> <code>prev.status</code> يحتوي "لم يبدأ".</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report 6 -->
+  <div class="report-header"><div class="report-num">6</div><div><strong>المشاريع المتوقفة (Stalled)</strong><br><small>مشاريع جارية لم يطرأ عليها أي تغيير لفترة محددة</small></div></div>
+  <div class="report-body">
+    <h4>الغرض</h4>
+    <p>رصد "الركود الحقيقي": المشاريع التي لم تتغير نسب إنجازها ولا حالتها خلال فترة معينة (افتراضي 4 أسابيع).</p>
+    <div class="alert alert-info">
+      <span class="alert-icon">💡</span>
+      <div class="alert-content"><strong>ميزة خاصة — "أيام التوقف":</strong> لا يُحسب من آخر تحديث فقط، بل يبحث عن أقدم لقطة لا يزال المشروع فيها بنفس النسب والحالة — أي "أول يوم توقف" — ويحسب الفرق حتى اليوم. هذا يعطي صورة أدق من مجرد "آخر تغيير".</div>
+    </div>
+    <h4>الاستثناءات التلقائية</h4>
+    <ul>
+      <li>المشاريع المستثناة عموماً (متعثرة/موقوفة)</li>
+      <li>المشاريع قرب الإنجاز (مدني ≥85% أو فني ≥89%) — لها تقرير منفصل</li>
+      <li>المشاريع بحالة "جاري الإقفال/التسليم"</li>
+    </ul>
+    <h4>المخرجات</h4>
+    <p>رقم المشروع، الاسم، الجهة، الحالة، مدني%، فني%، <span class="color-red">أيام منذ أول ظهور لهذه الحالة</span>، الحالة الفعلية (Badge قابل للتعديل).</p>
+  </div>
+
+  <!-- Report 7 -->
+  <div class="report-header"><div class="report-num">7</div><div><strong>المشاريع الجارية فعلياً (Actually In Progress)</strong><br><small>أيها يحتاج عملاً ميدانياً فعلياً الآن؟</small></div></div>
+  <div class="report-body">
+    <h4>الغرض</h4>
+    <p>يُجيب: من بين كل المشاريع "الجارية"، أيها يحتاج عملاً ميدانياً حقيقياً الآن، وأيها "جاهز" لا يحتاج إلا إجراء إداري؟</p>
+    <h4>مفهوم "الحالة الفعلية" (Actual Status)</h4>
+    <p>تُحسب تلقائياً بالمنطق التالي:</p>
+    <table class="info-table">
+      <thead><tr><th>الشرط</th><th>الحالة الفعلية</th></tr></thead>
+      <tbody>
+        <tr><td>مدني ≥80% <strong>و</strong> (فني ≥80% أو =0)</td><td><span class="badge badge-success">جاهز</span></td></tr>
+        <tr><td>مدني =0 <strong>و</strong> فني ≥80%</td><td><span class="badge badge-success">جاهز</span></td></tr>
+        <tr><td>غير ذلك</td><td><span class="badge badge-info">جار العمل فيه</span></td></tr>
+      </tbody>
+    </table>
+    <p>يمكن للمستخدم <strong>تجاوز</strong> الحالة المحسوبة بكتابة حالة يدوية مخصصة (مثل: "متبقي تجهيز الملف"، "جاهز للإخلاء"...) تُحفظ في قاعدة البيانات المحلية.</p>
+    <h4>المخرجات + فلاتر فرعية</h4>
+    <p>جدول مع عداد إجمالي يتحدث عند تطبيق فلاتر فرعية: "الحالة الفعلية" و"نوع المشروع" تعمل على الجدول مباشرة بلا إعادة تحميل.</p>
+  </div>
+
+  <!-- Report 8 -->
+  <div class="report-header"><div class="report-num">8</div><div><strong>المشاريع قرب الإنجاز</strong><br><small>مشاريع جارية اقتربت من الإنجاز ≥90% — مع إصدار مذكرة رسمية</small></div></div>
+  <div class="report-body">
+    <h4>الشروط (يكفي توفر أحدها)</h4>
+    <ul>
+      <li>مدني ≥90% <strong>و</strong> (فني ≥90% أو فني غير موجود)</li>
+      <li>مدني =0 <strong>و</strong> فني ≥90%</li>
+      <li>فني ≥90% <strong>و</strong> مدني بين 80%-90%</li>
+    </ul>
+    <div class="alert alert-success">
+      <span class="alert-icon">📄</span>
+      <div class="alert-content"><strong>ميزة خاصة — إصدار مذكرة رسمية:</strong> بعد عرض التقرير يظهر زر "إصدار مذكرة رسمية" يُولّد مذكرة جاهزة للطباعة تخص هذه المشاريع — مفيدة لإشعار الإدارة العليا بضرورة الإغلاق.</div>
+    </div>
+  </div>
+
+  <!-- Reports 9-10 -->
+  <div class="two-col">
+    <div>
+      <div class="report-header"><div class="report-num">9</div><div><strong>المشاريع المتأخرة</strong></div></div>
+      <div class="report-body">
+        <p>مشاريع جارية تجاوزت عدد الأيام المحدد من البداية الفعلية ولم تحقق النسبة المتوقعة.</p>
+        <div class="formula-box" style="font-size:0.8rem;">
+          <div class="formula-label">شرط الظهور:</div>
+          أيام من أول ظهور بحالة "جاري" <code>≥ الأيام المطلوبة</code>
+          <br>و مدني% <code>≤ النسبة المتوقعة</code>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="report-header"><div class="report-num">10</div><div><strong>زمن إنجاز المشاريع</strong></div></div>
+      <div class="report-body">
+        <p>يحسب المدة الفعلية الكاملة (بالأيام) لكل مشروع منجز من أول ظهور بحالة "جاري" إلى أول ظهور بحالة "منجز". يُرتَّب تصاعدياً (الأسرع إنجازاً أولاً).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report 11 -->
+  <div class="report-header"><div class="report-num">11</div><div><strong>زمن الإنجاز المطوّر (90% إلى منجز)</strong><br><small>3 مراحل زمنية مفصلة لكل مشروع منجز</small></div></div>
+  <div class="report-body">
+    <h4>المراحل المحسوبة</h4>
+    <ul>
+      <li><strong>مدة "لم يبدأ":</strong> من تاريخ التكليف (<code>assignmentDate</code>) إلى أول تحول لـ"جاري"</li>
+      <li><strong>مدة التنفيذ الفعلي:</strong> من أول تحول لـ"جاري" إلى أول تحول لـ"منجز"</li>
+    </ul>
+    <h4>المخرجات</h4>
+    <p>رقم الحساب، الاسم، النوع، الجهة، الحالة والفرعية، الكلفة، التكليف، التحول لـ"جاري"، <span class="color-red">مدة "لم يبدأ" (أيام)</span>، التحول لـ"منجز"، <span class="color-blue">مدة التنفيذ (أيام)</span>.</p>
+  </div>
+
+  <!-- Report 12 -->
+  <div class="report-header"><div class="report-num">12</div><div><strong>إحصائيات حسب النوع (Type Statistics)</strong><br><small>تلخيص كامل لحالة كل نوع مشروع</small></div></div>
+  <div class="report-body">
+    <h4>الإحصائيات لكل نوع</h4>
+    <p>لم تبدأ، جارية، منجزة، قرب الإنجاز، <strong>مزمنة</strong> (لها تواريخ تخطيطية مسجلة)، <strong>غير مزمنة</strong> (بدون تواريخ)، متوقفة، متعثرة — مع صف إجمالي مميز.</p>
+    <div class="alert alert-info">
+      <span class="alert-icon">💡</span>
+      <div class="alert-content"><strong>ملاحظة على "مزمن":</strong> في هذا التقرير، "مزمن" يعني فقط أن المشروع الجاري له تواريخ <code>planFrom</code> و <code>planTo</code> مسجلة — وليس بالضرورة أنه متأخر.</div>
+    </div>
+  </div>
+
+  <!-- Report 13 -->
+  <div class="report-header"><div class="report-num">13</div><div><strong>نسبة البدء في الموعد حسب السنة (On-Time Start)</strong><br><small>مؤشر الالتزام — هل المشاريع تنطلق في مواعيدها؟</small></div></div>
+  <div class="report-body">
+    <h4>الغرض</h4>
+    <p>لكل سنة، ما نسبة المشاريع التي بدأت فعلياً (تحولت لـ"جاري") في تاريخ بدئها التخطيطي أو قبله؟</p>
+    <div class="formula-box">
+      <div class="formula-label">معيار "في الموعد":</div>
+      تاريخ أول تحول لـ"جاري" <code>≤ planFrom</code>
+    </div>
+    <h4>المخرجات (ملف Excel متعدد الأوراق)</h4>
+    <ul>
+      <li>ورقة "الملخص": السنة، إجمالي المشاريع، في الموعد، متأخرة، النسبة%</li>
+      <li>ورقة لكل سنة: قائمة تفصيلية بكل مشروع مع: ✅ في الموعد / ❌ خارج الموعد</li>
+    </ul>
+  </div>
+
+  <!-- Reports 14-15 -->
+  <div class="report-header"><div class="report-num">14</div><div><strong>المشاريع التي لم تبدأ</strong><br><small>مرتبة من الأقدم تكليفاً مع إمكانية تسجيل سبب عدم البدء</small></div></div>
+  <div class="report-body">
+    <p>يعرض جميع المشاريع بحالة "لم يبدأ" مرتبة من الأقدم تكليفاً. الفترة منذ التكليف تُعرض <span class="color-red">باللون الأحمر إذا تجاوزت 30 يوماً</span>.</p>
+    <div class="alert alert-success">
+      <span class="alert-icon">✏️</span>
+      <div class="alert-content"><strong>الميزة التفاعلية:</strong> كل صف يحتوي مربع نص لكتابة "سبب عدم البدء" وزر "💾 حفظ" يحفظه في قاعدة البيانات المحلية مرتبطاً برقم المشروع — هذه الأسباب تُحفظ مع النسخة الاحتياطية ولا تُمسح بتحديث ملفات Excel.</div>
+    </div>
+  </div>
+
+  <div class="report-header"><div class="report-num">15</div><div><strong>تقرير المواعيد النهائية (Deadlines)</strong><br><small>كل المشاريع الجارية مرتبة بالأيام المتبقية على انتهائها</small></div></div>
+  <div class="report-body">
+    <p>يعمل دائماً على أحدث لقطة ويستخدم تاريخ اليوم الفعلي كمرجع. الفترة المتبقية = <code>planTo − اليوم</code>.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;">
+      <span class="badge badge-danger">سالبة = تجاوز الموعد (أحمر)</span>
+      <span class="badge badge-warning">&lt;15 يوم = قريب (برتقالي)</span>
+      <span class="badge badge-success">موجبة = ضمن الموعد</span>
+    </div>
+  </div>
+
+  <!-- Report 16 -->
+  <div class="report-header"><div class="report-num">16</div><div><strong>مركز الإحصائيات المجدول (Scheduled Stats)</strong><br><small>تقرير تفصيلي رقمي لكل فرع في جدول مزدوج الرأس</small></div></div>
+  <div class="report-body">
+    <h4>الغرض</h4>
+    <p>النسخة الموسّعة من "تقييم أداء الفروع" — يعرض جميع الأرقام التفصيلية التي تُبنى عليها الدرجة، لكن بدون الحاجة لتاريخ سابق.</p>
+    <h4>مجموعات البيانات الثلاث لكل فرع</h4>
+    <table class="info-table">
+      <thead><tr><th>المجموعة</th><th>الحقول</th></tr></thead>
+      <tbody>
+        <tr><td>أ) مشاريع لم تبدأ</td><td>متأخرة، الإجمالي، النسبة% (أحمر إذا &gt;20%)</td></tr>
+        <tr><td>ب) المشاريع الجارية</td><td>تجاوزت التزمين، بدون تحديث، تجاوزت 85% لأكثر من 10 أيام، الإجمالي</td></tr>
+        <tr><td>ج) المشاريع المنجزة</td><td>منجز-منجز &gt;15 يوم، فحص أولي &gt;60 يوم، تم النزول مع ملاحظات</td></tr>
+      </tbody>
+    </table>
+    <h4>معادلة الدرجة (من 100)</h4>
+    <div class="formula-box" style="font-size:0.85rem;">
+      درجة = <code>10×(1-نسبة_لم_يبدأ) + 20×(1-نسبة_تجاوز_التزمين) + 20×(1-نسبة_بدون_تحديث) + 20×(1-نسبة_تجاوز_85) + 10×(1-نسبة_منجز_منجز) + 10×(1-نسبة_فحص_أولي) + 10×(1-نسبة_ملاحظات)</code>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin:8px 0;">
+      <span class="badge badge-danger">أحمر &lt;50</span>
+      <span class="badge badge-warning">برتقالي &lt;70</span>
+      <span class="badge badge-success">أخضر ≥70</span>
+    </div>
+  </div>
+
+  <!-- Report 17 -->
+  <div class="report-header"><div class="report-num">17</div><div><strong>مقارنة الفروع حسب تكلفة الأعمال (شهري/ربعي/سنوي)</strong><br><small>الإنتاجية المالية الفعلية لكل فرع</small></div></div>
+  <div class="report-body">
+    <h4>الغرض</h4>
+    <p>حساب القيمة المالية الفعلية للأعمال المنفذة من كل فرع خلال شهر/ربع/سنة لمقارنة "الإنتاجية" بين الفروع.</p>
+    <div class="formula-box">
+      <div class="formula-label">معادلة "السنة كاملة" (FULL):</div>
+      implementedWorkCost = <code>(تكلفة المنجز حديثاً + تكلفة الجارية في النهاية) - تكلفة الجارية في البداية</code>
+    </div>
+    <div class="formula-box">
+      <div class="formula-label">معادلة شهر واحد:</div>
+      contribution = <code>القيمة التعاقدية × (نسبة_النهاية - نسبة_البداية) ÷ 100</code>
+    </div>
+    <h4>"عدد المشاريع المكافئ" — مفهوم مبتكر</h4>
+    <p>يُترجم "القيمة المالية المجردة" إلى "عدد مشاريع متوسطة الحجم مكافئة"، لتسهيل الفهم البديهي.</p>
+    <div class="alert alert-success">
+      <span class="alert-icon">📋</span>
+      <div class="alert-content"><strong>ميزة "مقارنة الأشهر المتعددة":</strong> بالضغط على "مقارنة الأشهر" تظهر لوحة لاختيار عدة أشهر في آن واحد، ويُولَّد جدول يضع كل فرع في صف وكل شهر في عمود — مقارنة الأداء الشهري جنباً إلى جنب.</div>
+    </div>
+  </div>
+
+  <!-- Report 18 -->
+  <div class="report-header"><div class="report-num">18</div><div><strong>⚠️ مشاريع ينبغي الاهتمام بها (Projects To Watch)</strong><br><small>تنبيه استباقي يجمع 3 أنواع مشاكل في مكان واحد</small></div></div>
+  <div class="report-body">
+    <h4>المعايير الثلاثة (يكفي تحقق معيار واحد)</h4>
+    <table class="info-table">
+      <thead><tr><th>#</th><th>المعيار</th><th>الشرط</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>لم تبدأ متأخرة</td><td>VIP: &gt;10 أيام من التكليف — غير VIP: &gt;30 يوماً</td></tr>
+        <tr><td>2</td><td>منجز - فحص أولي ولم يُقفل</td><td>أول لقطة "منجز + فحص أولي" منذ &gt;15 يوم</td></tr>
+        <tr><td>3</td><td>قرب الإنجاز ≥90% لم يصبح منجز</td><td>أول لقطة وصل فيها لـ≥90% منذ &gt;10 أيام</td></tr>
+      </tbody>
+    </table>
+    <h4>المخرجات</h4>
+    <p>رقم المشروع، الاسم، الجهة، الحالة، الحالة الفرعية، المدني%، <span class="color-red">سبب التنبيه (نص تفصيلي)</span>.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 4: KPI ════════════════════════ -->
+<div id="kpi" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📈">
+    <span class="tab-num">التبويب الثالث</span>
+    <h2>📈 لوحة مؤشرات الأداء (KPI Dashboard)</h2>
+    <p>4 بطاقات رئيسية + جدول تفصيلي + تصنيف المشاريع — نظرة سريعة شاملة</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🔍</span> الغرض من التبويب</h3>
+    <p>لوحة "نظرة سريعة" تعرض أهم المؤشرات لحالة المشاريع الحالية، مع إمكانية تصفية الكل حسب الجهة المنفذة. جميع البيانات من <strong>أحدث لقطة</strong> فقط.</p>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-title">متوسط نسبة الإنجاز الكلي</div>
+      <div class="kpi-value">للمشاريع الجارية</div>
+      <div class="kpi-desc">متوسط <code>calculateTotalProgress()</code> لكل المشاريع بحالة "جاري" — يُشير لمدى "نضج" المحفظة الحالية</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-icon">⏸️</div>
+      <div class="kpi-title">المشاريع المتوقفة</div>
+      <div class="kpi-value">بين آخر لقطتين</div>
+      <div class="kpi-desc">مشاريع لم تتغير فيها <em>أي</em> نسبة (مدني/فني/ورش) بين اللقطة الحالية والسابقة مباشرة</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon">🎯</div>
+      <div class="kpi-title">المشاريع قرب الإنجاز</div>
+      <div class="kpi-value">مدني≥90% وفني≥90%</div>
+      <div class="kpi-desc">شرط أكثر صرامة من التقرير المماثل في نظام التقارير (يشترط الاثنين معاً)</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-icon">🏆</div>
+      <div class="kpi-title">أفضل 3 مشاريع أداءً</div>
+      <div class="kpi-value">أعلى تقدم</div>
+      <div class="kpi-desc">المشاريع ذات أعلى فرق إيجابي في <code>calculateTotalProgress</code> بين اللقطتين الأخيرتين</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🏷️</span> تصنيف المشاريع الجارية (4 فئات)</h3>
+    <table class="info-table">
+      <thead><tr><th>التصنيف</th><th>الشرط</th><th>اللون</th></tr></thead>
+      <tbody>
+        <tr><td><strong>جاهز للإغلاق</strong></td><td>نسبة الإنجاز الكلية ≥ 90%</td><td><span class="badge badge-success">أخضر</span></td></tr>
+        <tr><td><strong>بداية بطيئة</strong></td><td>نسبة الإنجاز الكلية &lt; 20%</td><td><span class="badge badge-warning">برتقالي</span></td></tr>
+        <tr><td><strong>متوقف</strong></td><td>لم تتغير نسب المدني/الفني/الورش عن اللقطة السابقة</td><td><span class="badge badge-danger">أحمر</span></td></tr>
+        <tr><td><strong>نشط</strong></td><td>أي حالة أخرى</td><td><span class="badge badge-primary">أزرق</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📋</span> جدول المشاريع التفصيلي</h3>
+    <p>بالضغط على "عرض جدول المشاريع" يظهر جدول شامل بكل المشاريع مع جميع الأعمدة الأساسية. يحتوي ثلاثة أزرار: <strong>عرض</strong>، <strong>تصدير Excel</strong>، <strong>طباعة</strong>.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 5: VISUAL ANALYTICS ════════════════════════ -->
+<div id="visual" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📉">
+    <span class="tab-num">التبويب الرابع</span>
+    <h2>📉 التحليلات المرئية (Visual Analytics)</h2>
+    <p>6 رسوم بيانية تفاعلية — من S-Curve إلى مقارنة الفروع وتوزيع المشاريع</p>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">🔵 الرسم 1 — منحنى S-Curve المحسّن (المدني + الفني + المخطط)</div>
+    <div class="chart-body">
+      <p><strong>الغرض:</strong> المقارنة المرئية الأهم في النظام — تتبع تطور الإنجاز المدني والفني والمتوسط الفعلي مقارنة بالمنحنى المثالي المخطط عبر الزمن.</p>
+      <p><strong>المدخلات:</strong> رقم مشروع محدد (لعرض مشروع واحد) أو "عرض الكل" (متوسط الجميع أو فرع محدد).</p>
+
+      <div class="formula-box">
+        <div class="formula-label">المنحنى المثالي S (الخط الأخضر المنقط):</div>
+        t = أيام من بداية السجل ÷ إجمالي أيام السجل<br>
+        القيمة = <code>100 ÷ (1 + e^(-10 × (t - 0.5)))</code>
+      </div>
+
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#3498db"></span> الإنجاز المدني (أزرق)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#9b59b6"></span> الإنجاز الفني (بنفسجي)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#e74c3c"></span> المتوسط الفعلي (أحمر سميك مع تعبئة)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#27ae60;border:2px dashed #27ae60"></span> المنحنى المثالي (أخضر منقط)</span>
+      </div>
+
+      <div class="alert alert-info">
+        <span class="alert-icon">💡</span>
+        <div class="alert-content">عند تمرير الماوس على أي نقطة يظهر "الفرق" بين المتوسط الفعلي والمنحنى المثالي: <span class="color-green">✅ متقدم</span> (الفرق ≥ 0) أو <span class="color-red">⚠️ متأخر</span> (الفرق &lt; 0).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">📊 الرسم 2 — مقارنة الفروع الموحدة (متعدد الأوضاع)</div>
+    <div class="chart-body">
+      <p><strong>الغرض:</strong> رسم أعمدة أفقي يُغيّر محتواه كاملاً حسب القائمة المنسدلة المختارة.</p>
+      <table class="info-table">
+        <thead><tr><th>وضع العرض</th><th>ما يُحسب</th></tr></thead>
+        <tbody>
+          <tr><td>عدد المشاريع التي تحدّث نسبها أسبوعياً</td><td>متوسط أسبوعي = إجمالي المشاريع المُحدَّثة ÷ إجمالي الأسابيع</td></tr>
+          <tr><td>عدد المشاريع المنجزة أسبوعياً</td><td>مشاريع تحولت لـ"منجز" ÷ إجمالي الأسابيع</td></tr>
+          <tr><td>عدد المشاريع المنطلقة أسبوعياً</td><td>مشاريع تحولت لـ"جاري" ÷ إجمالي الأسابيع</td></tr>
+          <tr><td>الإنجاز المالي (أسبوعي/شهري/ربعي/سنوي)</td><td>المساهمة المالية المُجمَّعة ÷ الفترة المناسبة</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">📊 الرسم 3 — مقارنة أداء الجهات المنفذة</div>
+    <div class="chart-body">
+      <p>رسم يقارن <strong>متوسط الإنجاز المدني</strong> و<strong>متوسط الإنجاز الفني</strong> لكل جهة من أحدث لقطة — يكشف أي الفروع متقدم مدنياً أكثر من فنياً أو العكس.</p>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">🍩 الرسم 4 — توزيع المشاريع (متعدد الأوضاع)</div>
+    <div class="chart-body">
+      <table class="info-table">
+        <thead><tr><th>نوع التوزيع</th><th>ما يُعرض</th></tr></thead>
+        <tbody>
+          <tr><td>حسب الحالة</td><td>توزيع المشاريع على الحالات (لم يبدأ/جاري/منجز...)</td></tr>
+          <tr><td>حسب النوع</td><td>توزيع المشاريع على أنواع المشاريع</td></tr>
+          <tr><td>حسب الجهة المنفذة</td><td>عدد المشاريع لكل فرع</td></tr>
+          <tr><td>حسب نسبة الإنجاز</td><td>الجارية ضمن فئات: 0-25%، 25-50%، 50-75%، 75-100%</td></tr>
+          <tr><td>المشاريع المنطلقة شهرياً</td><td>عدد المشاريع التي تحولت لـ"جاري" بكل شهر</td></tr>
+          <tr><td>المشاريع المنجزة شهرياً</td><td>عدد المشاريع الواصلة لـ"منجز" بكل شهر</td></tr>
+          <tr><td>المشاريع المضافة شهرياً</td><td>عدد المشاريع التي ظهرت لأول مرة بكل شهر</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-box">
+      <div class="chart-title">📊 الرسم 5 — توزيع نسب الإنجاز</div>
+      <div class="chart-body">
+        <p>يعرض عدد المشاريع الجارية ضمن كل شريحة (قليل التقدم/متوسط/متقدم/قرب الإنجاز).</p>
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">📈 الرسم 6 — تطور الإنجاز للمشاريع الرئيسية</div>
+      <div class="chart-body">
+        <p>رسم خطي يعرض مسار تطور نسبة الإنجاز عبر الزمن لأهم المشاريع — يكشف هل التقدم منتظم أم متذبذب أم توقف لفترة.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 6: PERFORMANCE ANALYSIS ════════════════════════ -->
+<div id="perf" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="🔍">
+    <span class="tab-num">التبويب الخامس</span>
+    <h2>🔍 تحليل الأداء المتقدم</h2>
+    <p>5 رسوم تاريخية + رسم KPI الموحد + أدوات تحليل — كيف تطورت المؤشرات عبر الزمن؟</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📌</span> منهجية الرسوم التاريخية</h3>
+    <p>كل الرسوم الخمسة تتبع نفس المنهج: تمر على <strong>كل لقطة</strong> في السجل الزمني بالترتيب الزمني، وتحسب النسبة المطلوبة عند كل لقطة، فتُنتج خطاً زمنياً يُظهر <strong>الاتجاه</strong> (تحسن أم تراجع) وليس فقط القيمة الحالية.</p>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">📈 الرسم 1 — نسبة مشاريع لم تبدأ لأكثر من شهر</div>
+    <div class="chart-body">
+      <div class="formula-box">عدد "لم يبدأ" التي مضى على تكليفها &gt;30 يوم ÷ إجمالي "لم يبدأ" × 100</div>
+      <p><strong>التفسير:</strong> اتجاه تصاعدي = تراكم المشاريع المتأخرة في البدء يزداد سوءاً. يُشير لمشكلة منهجية في الانطلاق.</p>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">📉 الرسم 2 — نسبة مشاريع بدون تحديث</div>
+    <div class="chart-body">
+      <div class="formula-box">نسبة الجارية التي لم تتغير نسبها منذ ~شهر ÷ إجمالي الجارية × 100</div>
+      <p><strong>التفسير:</strong> ارتفاع هذا المؤشر يشير لمشكلة منهجية في المتابعة الميدانية أو إدخال البيانات.</p>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">⚠️ الرسم 3 — نسبة مشاريع جارية انتهى تزمينها</div>
+    <div class="chart-body">
+      <div class="formula-box">الجارية التي <code>planTo</code> < تاريخ اللقطة ÷ إجمالي الجارية × 100</div>
+      <p><strong>التفسير:</strong> يعكس تراكم المشاريع المتأخرة عن جدولها الزمني الأصلي — مؤشر إنذار مبكر للتأخيرات المتراكمة.</p>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">⏳ الرسم 4 — نسبة فحص أولي لأكثر من شهرين</div>
+    <div class="chart-body">
+      <div class="formula-box">المنجزة (فحص أولي) منذ &gt;60 يوم ÷ إجمالي المنجزة (فحص أولي) × 100</div>
+      <p><strong>التفسير:</strong> يعكس بطء عملية التسليم والفحص النهائي — قد يشير لاختناقات إدارية في مرحلة الإغلاق.</p>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">✅ الرسم 5 — مشاريع منجزة مع ملاحظات فنية</div>
+    <div class="chart-body">
+      <div class="formula-box">المنجزة بحالة فرعية "تم النزول مع ملاحظات" ÷ إجمالي المنجزة</div>
+      <p><strong>التفسير:</strong> يعكس جودة التنفيذ قبل التسليم — ارتفاع يعني تسليم مشاريع بمتطلبات فنية عالقة.</p>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">📊 الرسم 6 — اتجاهات مؤشرات الأداء (KPI Trend)</div>
+    <div class="chart-body">
+      <p>رسم خطي موحد يعرض تطور <strong>7 مؤشرات أداء</strong> معاً عبر كل تواريخ السجل الزمني:</p>
+      <table class="info-table">
+        <thead><tr><th>المؤشر</th><th>ما يقيسه</th></tr></thead>
+        <tbody>
+          <tr><td>تراكم المشاريع</td><td>نسبة الجارية التي تجاوزت موعدها التخطيطي</td></tr>
+          <tr><td>حركة الفرع</td><td>نسبة الجارية التي شهدت أي تقدم خلال الفترة</td></tr>
+          <tr><td>الشيخوخة</td><td>نسبة الزمن المستهلك مقابل الإنجاز المحقق</td></tr>
+          <tr><td>سرعة الفرع</td><td>الفعلي ÷ المخطط (×100 في الرسم)</td></tr>
+          <tr><td>فجوة التنفيذ</td><td>متوسط الفارق (مخطط - فعلي) لكل مشروع</td></tr>
+          <tr><td>الالتزام الزمني</td><td>نسبة المشاريع "المنضبطة" (فجوتها ≤10%)</td></tr>
+          <tr><td>إغلاق المشاريع</td><td>نسبة المُغلَق إلى المُطلَق خلال الفترة</td></tr>
+        </tbody>
+      </table>
+      <p><strong>إمكانية الفلترة:</strong> حسب الجهة المنفذة، وحسب مؤشر واحد أو كل المؤشرات معاً.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🛠️</span> أدوات التحليل الإضافية</h3>
+    <div class="two-col">
+      <div>
+        <h4>📅 التقدم الشهري</h4>
+        <p>يُدخل المستخدم عدد الأشهر، فيُولَّد تقرير يقارن التقدم المُحقق خلال كل شهر من الأشهر الأخيرة N — يُظهر "الاتساق" أو "التذبذب" في معدل التقدم الشهري.</p>
+      </div>
+      <div>
+        <h4>🔮 تنبؤات الإنهاء</h4>
+        <p>اختر مشروعاً من القائمة المنسدلة، فيُحسب تلقائياً تاريخ الإنهاء المتوقع بناءً على معدل التقدم الفعلي من السجل الزمني، مع المقارنة بـ<code>planTo</code> الأصلي.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 7: PROJECT DETAILS ════════════════════════ -->
+<div id="project-details" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📋">
+    <span class="tab-num">التبويب السادس</span>
+    <h2>📋 تفاصيل المشروع والتوقعات الذكية</h2>
+    <p>بطاقة كاملة لأي مشروع — تاريخه الكامل، التوقعات الذكية، فترات التوقف، الرسم البياني التاريخي</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🔍</span> طريقة البحث</h3>
+    <p>اكتب أكثر من حرفين في حقل البحث، تظهر قائمة منسدلة بأول 10 نتائج مطابقة (باسم المشروع أو رقمه) من أحدث لقطة، كل نتيجة تعرض الاسم والرقم والحالة ومتوسط الإنجاز. النقر على نتيجة يعرض تفاصيل كاملة.</p>
+  </div>
+
+  <div class="card success">
+    <h3><span class="icon">🔮</span> التوقعات الذكية — الانحدار الخطي</h3>
+    <p>عند اختيار مشروع، يُجري النظام <strong>انحداراً خطياً</strong> على بيانات تطور إنجازه لتقدير موعد إنهائه:</p>
+    <div class="formula-box">
+      <div class="formula-label">معامل التحديد R² (مدى دقة التوقع)</div>
+      slope (الميل) = معدل التغير اليومي في نسبة الإنجاز
+      <br>remainingProgress = <code>max(0, 90 - آخر نسبة)</code>  ← معيار الإنجاز هو 90%
+      <br>daysRemaining = <code>remainingProgress ÷ slope</code>
+    </div>
+    <table class="info-table">
+      <thead><tr><th>الحالة</th><th>الرسالة</th><th>اللون</th></tr></thead>
+      <tbody>
+        <tr><td>الإنجاز ≥ 90%</td><td>🎉 المشروع أنجز — تم الإنجاز</td><td><span class="color-green">أخضر</span></td></tr>
+        <tr><td>slope ≤ 0.01</td><td>⛔ المشروع متوقف أو يتراجع</td><td><span class="color-red">أحمر</span></td></tr>
+        <tr><td>daysRemaining > 365</td><td>🚨 متأخر بشكل كبير — تدخل عاجل</td><td><span class="color-red">أحمر</span></td></tr>
+        <tr><td>weeklyRate &lt; 1%</td><td>⚠️ سرعة الإنجاز بطيئة</td><td><span class="color-orange">برتقالي</span></td></tr>
+        <tr><td>weeklyRate ≥ 3%</td><td>🚀 سرعة ممتازة — يسير بشكل جيد</td><td><span class="color-green">أخضر</span></td></tr>
+      </tbody>
+    </table>
+    <h4>دقة التوقع (بناءً على R²)</h4>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <span class="badge badge-success">R² ≥ 0.7 → دقة عالية</span>
+      <span class="badge badge-warning">R² ≥ 0.4 → دقة متوسطة</span>
+      <span class="badge badge-danger">R² &lt; 0.4 → دقة منخفضة</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">⏸️</span> اكتشاف فترات التوقف التلقائي</h3>
+    <p>يمر النظام على كل زوج لقطتين متتاليتين. إذا كان التغير في المدني والفني كلاهما أقل من 0.5% → فترة "متوقفة". يُجمع فترات التوقف المتتالية، وإذا تجاوزت <strong>14 يوماً</strong> تُعرض في بطاقة تحذيرية "⚠️ فترات التوقف المكتشفة".</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📈</span> الرسم البياني التاريخي</h3>
+    <p>3 خطوط عبر كل لقطات السجل: <span class="color-blue">الإنجاز المدني</span>، <span class="color-blue">الإنجاز الفني</span>، <span class="color-green">المتوسط</span> (مع تعبئة خضراء تحته). المحور Y من 0 إلى 100.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🕐</span> التسلسل الزمني التفصيلي</h3>
+    <p>قائمة بكل نقاط السجل (من الأحدث للأقدم)، كل عنصر يعرض: التاريخ الكامل، المدني%، الفني%، الحالة، والتغيّر عن اللقطة السابقة (<span class="color-green">أخضر +X%</span> أو <span class="color-red">أحمر -X%</span> أو "بدون تغيير").</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 8: EVM ════════════════════════ -->
+<div id="evm" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📊">
+    <span class="tab-num">التبويب السابع</span>
+    <h2>📊 مؤشرات EVM (القيمة المكتسبة)</h2>
+    <p>تحليل أداء مشروع واحد بمنهجية Earned Value Management — مع التركيز على البُعد الزمني فقط</p>
+  </div>
+
+  <div class="card warning">
+    <h3><span class="icon">ℹ️</span> ملاحظة جوهرية</h3>
+    <p>المشاريع في هذا النظام <strong>مموَّلة مسبقاً بالكامل (Fully Pre-funded)</strong>، لذا لا توجد بيانات "تكلفة فعلية" (AC) يمكن تتبعها. بالتالي المؤشرات CV، CPI، EAC، ETC، VAC، TCPI كلها = <strong>غير متاحة ("-")</strong>، ويعمل النظام فقط على <strong>البُعد الزمني (Schedule-Driven EVM)</strong>.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">⚖️</span> المعادلات الأساسية</h3>
+    <table class="info-table">
+      <thead><tr><th>المصطلح</th><th>المعنى</th><th>المعادلة</th></tr></thead>
+      <tbody>
+        <tr><td><strong>BAC</strong></td><td>الميزانية المعتمدة</td><td>= القيمة التعاقدية (<code>contractValue</code>)</td></tr>
+        <tr><td><strong>PV</strong></td><td>القيمة المخططة</td><td>= BAC × الإنجاز المخطط (منحنى S)</td></tr>
+        <tr><td><strong>EV</strong></td><td>القيمة المكتسبة</td><td>= BAC × الإنجاز الفعلي (<code>calculateTotalProgress</code>)</td></tr>
+        <tr><td><strong>SV</strong></td><td>انحراف الجدول</td><td>= EV − PV (سالب = متأخر)</td></tr>
+        <tr><td><strong>SPI</strong></td><td>مؤشر أداء الجدول</td><td>= EV ÷ PV (أقل من 1 = متأخر)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">⏱️</span> التحليل الزمني</h3>
+    <div class="formula-box">
+      estimatedDuration = <code>originalDuration ÷ SPI</code>
+      <br>estimatedDelay = <code>max(0, estimatedDuration - originalDuration)</code>
+      <br>الأثر المالي المحتمل = <code>(estimatedDelay ÷ originalDuration) × BAC</code>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🚦</span> مستوى الخطر بناءً على SPI</h3>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin:10px 0;">
+      <span class="badge badge-danger" style="padding:6px 14px; font-size:0.9rem;">SPI &lt; 0.8 → حرج (أحمر غامق)</span>
+      <span class="badge badge-danger" style="padding:6px 14px; font-size:0.9rem;">SPI &lt; 0.9 → مرتفع (أحمر)</span>
+      <span class="badge badge-warning" style="padding:6px 14px; font-size:0.9rem;">SPI &lt; 0.95 → متوسط (برتقالي)</span>
+      <span class="badge badge-success" style="padding:6px 14px; font-size:0.9rem;">SPI ≥ 0.95 → منخفض (أخضر)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📝</span> سجل الإجراءات الإدارية</h3>
+    <p>بطاقة تحتوي 3 حقول قابلة للتعديل والحفظ مرتبطة برقم المشروع:</p>
+    <ul>
+      <li><strong>سبب التأخير الرئيسي</strong></li>
+      <li><strong>الإجراء التصحيحي المتخذ</strong></li>
+      <li><strong>حالة القرار:</strong> قيد الدراسة / تم الاعتماد / قيد التنفيذ</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 9: STATS CENTER ════════════════════════ -->
+<div id="stats" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📊">
+    <span class="tab-num">التبويب الثامن</span>
+    <h2>📊 مركز الإحصائيات الذكية</h2>
+    <p>غرفة عمليات شاملة — 3 مقاييس دائرية + 4 بطاقات إحصائية + كل رقم قابل للنقر لعرض التفاصيل</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">⭕</span> المؤشرات الذكية الدائرية (Gauge Charts)</h3>
+    <table class="info-table">
+      <thead><tr><th>المؤشر</th><th>المعادلة</th><th>اللون</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>حركة الفرع</strong></td>
+          <td>مشاريع زاد فيها المدني أو الفني عن اللقطة السابقة ÷ إجمالي الجارية × 100</td>
+          <td><span style="color:#27ae60;">أخضر</span></td>
+        </tr>
+        <tr>
+          <td><strong>الشيخوخة</strong></td>
+          <td>مشاريع "جاري" أو "لم يبدأ" مضى على تكليفها &gt;365 يوم ÷ إجمالي هذه المجموعة × 100</td>
+          <td><span style="color:#e74c3c;">أحمر</span></td>
+        </tr>
+        <tr>
+          <td><strong>التراكم الإداري</strong></td>
+          <td>(لم يبدأ + قرب الإنجاز) ÷ إجمالي المشاريع × 100</td>
+          <td><span style="color:#f39c12;">برتقالي</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠️</span>
+      <div class="alert-content"><strong>تنبيه:</strong> مؤشر "الشيخوخة" هنا يختلف جوهرياً عن نفس الاسم في تبويب "مؤشرات الأداء الخاصة بالفروع". هنا يعني "نسبة المشاريع القديمة جداً (>سنة)" وليس نسبة الزمن المستهلك مقابل الإنجاز.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🃏</span> البطاقات الإحصائية الأربع</h3>
+
+    <h4>🟦 بطاقة "المشاريع التي لم تبدأ"</h4>
+    <table class="info-table">
+      <thead><tr><th>الحقل</th><th>المعادلة/الشرط</th></tr></thead>
+      <tbody>
+        <tr><td>إجمالي لم يبدأ</td><td>كل "لم يبدأ" غير المستثناة</td></tr>
+        <tr><td>تأخير > شهر</td><td>VIP: >10 أيام — غير VIP: >30 يوماً من التكليف</td></tr>
+        <tr><td>منسية > سنة</td><td>مضى على التكليف أكثر من 365 يوماً</td></tr>
+        <tr><td>متوسط عمر المشروع قبل البدء</td><td>متوسط (اليوم - تاريخ التكليف) لكل "لم يبدأ"</td></tr>
+      </tbody>
+    </table>
+
+    <h4>🟩 بطاقة "المشاريع الجارية"</h4>
+    <table class="info-table">
+      <thead><tr><th>الحقل</th><th>المعادلة/الشرط</th></tr></thead>
+      <tbody>
+        <tr><td>عدد المشاريع الجارية</td><td>حالة تحتوي "جاري" وليست "إقفال/تسليم"</td></tr>
+        <tr><td>متأخرة (تجاوزت التزمين)</td><td>planTo &lt; اليوم</td></tr>
+        <tr><td>ضمن التزمين</td><td>لها تواريخ صالحة وplanTo > اليوم</td></tr>
+        <tr><td>تجاوزت 80% من زمنها</td><td>80% ≤ (اليوم-planFrom)/(planTo-planFrom) × 100 &lt; 100%</td></tr>
+        <tr><td>انتهى زمنها والإنجاز >80%</td><td>timeProgress ≥ 100% و calculateTotalProgress ≥ 80%</td></tr>
+        <tr><td>بدون تحديث >شهر</td><td>نسب المدني والفني لم تتغير عن اللقطة قبل ~30 يوم</td></tr>
+      </tbody>
+    </table>
+
+    <h4>🟦 بطاقة "المشاريع المنجزة"</h4>
+    <table class="info-table">
+      <thead><tr><th>الحقل</th><th>المعادلة/الشرط</th></tr></thead>
+      <tbody>
+        <tr><td>إجمالي المنجزة</td><td>حالة تحتوي "منجز"</td></tr>
+        <tr><td>فحص أولي</td><td>subStatus يحتوي "فحص أولي"</td></tr>
+        <tr><td>فحص أولي > 60 يوم</td><td>اليوم - statusDate > 60 يوم</td></tr>
+        <tr><td>متأخر تسليم ملفاتها > 15 يوم</td><td>status وsubStatus كلاهما "منجز"، اليوم - (actualTo أو planTo) > 15 يوم</td></tr>
+        <tr><td>إجمالي كلفة المنجزة</td><td>أعلى قيمة تعاقدية شُوهدت لكل مشروع منجز عبر السجل الزمني</td></tr>
+      </tbody>
+    </table>
+
+    <h4>🟥 بطاقة "مشاريع غير طبيعية"</h4>
+    <table class="info-table">
+      <thead><tr><th>الفئة</th><th>الشرط</th></tr></thead>
+      <tbody>
+        <tr><td>متوقفة</td><td>حالة تحتوي "متوقف" أو "موقف"</td></tr>
+        <tr><td>متعثرة</td><td>حالة تحتوي "متعثر"</td></tr>
+        <tr><td>نسبة غير الصحية</td><td>(متوقفة + متعثرة) ÷ إجمالي المشاريع × 100</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card success">
+    <h3><span class="icon">👆</span> التفاعل — كل رقم قابل للنقر!</h3>
+    <p>تقريباً كل قيمة رقمية في البطاقات الأربع <strong>قابلة للنقر</strong>، تفتح نافذة منبثقة تعرض جدول تفصيلي بأسماء وأرقام جميع المشاريع التي تحقق ذلك المعيار بالضبط — مع الأعمدة: الرقم، الاسم، الجهة، النوع، الحالة، الفرعية، مدني%، فني%، وتاريخ إضافي حسب الفئة.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 10: CPM ════════════════════════ -->
+<div id="cpm" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="⏱️">
+    <span class="tab-num">التبويب التاسع</span>
+    <h2>⏱️ الزمن الحرج (CPM)</h2>
+    <p>تحليل المسار الحرج لكل مشروع — جدول Gantt ذكي مع مؤشرات Float وتواريخ احترافية</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🎯</span> الغرض</h3>
+    <p>يُتيح للمستخدم تحديد <strong>بنود عمل كل مشروع</strong> (مدني، فني، ورش...) مع مددها وعلاقاتها التتابعية، ثم يحسب النظام تلقائياً: المسار الحرج، قيم ES/EF/LS/LF، Total Float، Free Float، ويرسم مخطط Gantt ويُعرض تاريخ الانتهاء المتوقع.</p>
+  </div>
+
+  <div class="card success">
+    <h3><span class="icon">📋</span> طريقة الاستخدام (خطوة بخطوة)</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>البحث عن مشروع</strong> — ابحث بالاسم أو الرقم في حقل البحث</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>إعدادات المشروع</strong> — حدد تاريخ بدء المشروع وتاريخ البيانات (Data Date)</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>إضافة البنود</strong> — اضغط "➕ إضافة بند جديد" لإضافة كل بند، أو استورد من Excel بالضغط على "📥 استيراد من Excel" (يجب أن يحتوي الملف أعمدة: نوع البند، الاسم، الكمية، الفترة، العلاقة التتابعية)</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>تحديد العلاقات</strong> — لكل بند حدد "السابق" (predecessor) ونوع العلاقة (FS/SS/FF/SF) وقيمة Lag</div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content"><strong>مشاهدة النتائج</strong> — تُحسب تلقائياً: ES، EF، LS، LF، Float، ويُعرض مخطط Gantt مع المسار الحرج باللون الأحمر</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📊</span> أعمدة جدول البنود</h3>
+    <table class="info-table">
+      <thead><tr><th>العمود</th><th>المعنى</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ES</strong></td><td>Early Start — أبكر وقت يمكن بدء البند فيه</td></tr>
+        <tr><td><strong>EF</strong></td><td>Early Finish — أبكر وقت انتهاء ممكن</td></tr>
+        <tr><td><strong>LS</strong></td><td>Late Start — أحدث وقت يمكن البدء بدون تأخير المشروع</td></tr>
+        <tr><td><strong>LF</strong></td><td>Late Finish — أحدث وقت انتهاء بدون تأخير المشروع</td></tr>
+        <tr><td><strong>Total Float</strong></td><td>المرونة الكلية — <span class="color-red">صفر = بند حرج</span></td></tr>
+        <tr><td><strong>Free Float</strong></td><td>المرونة الحرة — مدى تأخير البند بدون التأثير على التالي</td></tr>
+        <tr><td><strong>الوزن</strong></td><td>نسبة مدة البند من إجمالي مدة المشروع</td></tr>
+        <tr><td><strong>مخطط %</strong></td><td>نسبة الإنجاز المخططة حتى "تاريخ البيانات"</td></tr>
+        <tr><td><strong>فعلي %</strong></td><td>الكمية المنجزة ÷ الكمية الكلية × 100</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📅</span> احتساب أيام العمل</h3>
+    <p>النظام <strong>يستثني يوم الجمعة</strong> تلقائياً من جميع حسابات الفترات الزمنية (بما أنه عطلة رسمية). كذلك يُعرض تاريخ البدء والانتهاء لكل بند بصيغة "يوم الأسبوع + تاريخ" لسهولة القراءة.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📊</span> ملخص المشروع وملف الانتهاء المتوقع</h3>
+    <p>بعد إدخال البنود، يُعرض ملخص يحتوي: إجمالي فترة المشروع بالأيام، نسبة الإنجاز المخطط والفعلي الإجمالية، <strong>تاريخ الانتهاء المتوقع</strong>.</p>
+    <p>المسار الحرج يظهر كشريط أحمر تسلسلي (بند 1 → بند 2 → ... → بند N) يُمثّل الأنشطة التي لا يمكن تأخير أي منها بدون تأخير المشروع كله.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 11: BRANCH KPI ════════════════════════ -->
+<div id="branch-kpi" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📊">
+    <span class="tab-num">التبويب العاشر</span>
+    <h2>📊 مؤشرات الأداء الخاصة بالفروع</h2>
+    <p>7 مؤشرات شهرية لكل فرع + جدول تفصيلي + مصفوفة مقارنة بين جميع الفروع</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📅</span> تحديد الفترة الزمنية</h3>
+    <p>اختر الشهر من القائمة المنسدلة (أو "الشهر الحالي" افتراضياً). يُحدد النظام تلقائياً لقطتين مرجعيتين: <strong>currentSnap</strong> (أقرب لقطة لنهاية الفترة) و<strong>baselineSnap</strong> (أقرب لقطة لبداية الفترة) لحساب "التغير خلال الفترة".</p>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-icon">📦</div>
+      <div class="kpi-title">1. مؤشر تراكم المشاريع</div>
+      <div class="kpi-desc">الجارية التي تجاوزت planTo ÷ إجمالي الجارية</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon">🏃</div>
+      <div class="kpi-title">2. مؤشر حركة الفرع</div>
+      <div class="kpi-desc">مشاريع شهدت أي تقدم ÷ إجمالي الجارية</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-icon">👴</div>
+      <div class="kpi-title">3. مؤشر الشيخوخة</div>
+      <div class="kpi-desc">Σ أيام منقضية ÷ Σ(أيام مخططة × إنجاز%) × 100</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-icon">⚡</div>
+      <div class="kpi-title">4. مؤشر سرعة الفرع</div>
+      <div class="kpi-desc">Σ التقدم الفعلي للفترة ÷ Σ التقدم المخطط للفترة</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-icon">📏</div>
+      <div class="kpi-title">5. مؤشر فجوة التنفيذ</div>
+      <div class="kpi-desc">Σ(مخطط - فعلي) ÷ إجمالي الجارية</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon">⏰</div>
+      <div class="kpi-title">6. مؤشر الالتزام الزمني</div>
+      <div class="kpi-desc">مشاريع فجوتها ≤10% ÷ إجمالي الجارية</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-title">7. مؤشر إغلاق المشاريع</div>
+      <div class="kpi-desc">انتقلت لـ"منجز" ÷ انتقلت لـ"جاري" خلال الفترة</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🎨</span> جدول التفسير اللوني للمؤشرات</h3>
+    <table class="info-table">
+      <thead><tr><th>التصنيف</th><th>لون النص</th><th>لون الخلفية</th></tr></thead>
+      <tbody>
+        <tr><td>ممتاز</td><td style="color:#0d6e3f">■ أخضر غامق</td><td style="background:#d4edda;padding:5px;">أخضر فاتح</td></tr>
+        <tr><td>جيد</td><td style="color:#1a8a5a">■ أخضر مائل</td><td style="background:#c8f0e0;padding:5px;">أخضر فيروزي</td></tr>
+        <tr><td>لا بأس</td><td style="color:#9a6700">■ ذهبي</td><td style="background:#fff3cd;padding:5px;">أصفر</td></tr>
+        <tr><td>سيئ</td><td style="color:#c0550a">■ برتقالي</td><td style="background:#ffe5cc;padding:5px;">برتقالي فاتح</td></tr>
+        <tr><td>الأسوأ</td><td style="color:#b91c2e">■ أحمر</td><td style="background:#f8d7da;padding:5px;">أحمر فاتح</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📋</span> مصفوفة مؤشرات الأداء حسب الفروع</h3>
+    <p>جدول كبير: كل صف = فرع، كل عمود = أحد المؤشرات السبعة مع وصف مختصر للمعادلة في رأس كل عمود. كل خلية تعرض القيمة + تصنيف نصي + تلوين.</p>
+    <p><strong>خيار "عرض متعدد الأشهر":</strong> اختر مؤشراً واحداً وعدة أشهر → جدول يقارن أداء كل فرع في هذا المؤشر عبر الأشهر المختارة.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 12: TIMELINE ════════════════════════ -->
+<div id="timeline" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="🗓️">
+    <span class="tab-num">التبويب الحادي عشر</span>
+    <h2>🗓️ الخطة الزمنية</h2>
+    <p>جدولة المشاريع يدوياً وتعيين المشرفين وإنشاء مخطط Gantt ومتابعة الانحرافات</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🎯</span> الغرض</h3>
+    <p>يُتيح للمستخدم <strong>جدولة المشاريع يدوياً</strong>: تحديد تاريخ البدء المخطط، المدة، تاريخ الانتهاء المحسوب، وتعيين المشرف لكل مشروع. تُحفظ هذه البيانات محلياً وتُستخدم في مخطط Gantt والتقارير الأخرى.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📋</span> جداول الخطة الزمنية</h3>
+
+    <h4>جدول "لم تبدأ" — للجدولة المستقبلية</h4>
+    <p>يعرض جميع المشاريع بحالة "لم يبدأ" مع حقول قابلة للتعديل لكل مشروع:</p>
+    <table class="info-table">
+      <thead><tr><th>الحقل</th><th>النوع</th><th>ملاحظة</th></tr></thead>
+      <tbody>
+        <tr><td>تاريخ البدء المخطط</td><td>date picker</td><td>يُعبأ تلقائياً من planFrom إن وُجد</td></tr>
+        <tr><td>المدة (أيام)</td><td>رقمي</td><td>يُحسب تلقائياً من planFrom-planTo إن وُجدا</td></tr>
+        <tr><td>تاريخ الانتهاء المحسوب</td><td>للقراءة فقط</td><td>= البدء + المدة، يُحدَّث تلقائياً</td></tr>
+        <tr><td>اسم المشرف</td><td>نصي</td><td>يُستخدم في مخطط Gantt والتوصيات</td></tr>
+      </tbody>
+    </table>
+
+    <h4>جدول "الجارية" — للمتابعة</h4>
+    <p>يعرض المشاريع بحالة "جاري" مع نسب الإنجاز والتواريخ لمتابعة التقدم مقابل الخطة.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📊</span> مخطط Gantt للمشرفين</h3>
+    <p>يرسم مخططاً بيانياً يُظهر:</p>
+    <ul>
+      <li>كل مشروع كشريط أفقي يمتد من تاريخ البدء إلى تاريخ الانتهاء</li>
+      <li>التجميع حسب المشرف (كل مشرف مجموعة من المشاريع)</li>
+      <li>إمكانية الفلترة حسب الجهة والمشرف</li>
+      <li>زر "إزاحة مشاريع مشرف" لتحريك تواريخ مشاريع مشرف محدد بعدد أيام</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📉</span> تقرير الانحرافات</h3>
+    <p>يقارن التاريخ المخطط في "الخطة الزمنية" بالتواريخ الفعلية من بيانات المشاريع، ويعرض "انحراف الجدول" (التأخير أو التقدم) لكل مشروع.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">👥</span> مخطط Gantt الموحد (مشرف + جهة)</h3>
+    <p>مخطط Gantt متكامل يجمع تصفية بالجهة والمشرف معاً، يعرض جميع المشاريع المُسندة لذلك المشرف من تلك الجهة في مخطط واحد — مفيد لرؤية عبء عمل كل مشرف وتوزيع المشاريع زمنياً.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 13: GEO MANAGER ════════════════════════ -->
+<div id="geo" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="🗺️">
+    <span class="tab-num">التبويب الثاني عشر</span>
+    <h2>🗺️ إدارة المواقع الجغرافية ومسارات المشاريع</h2>
+    <p>تسجيل إحداثيات المشاريع والمشرفين — أساس التوصيات الجغرافية الذكية</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🎯</span> الغرض</h3>
+    <p>يُتيح تسجيل <strong>الإحداثيات الجغرافية (خط عرض وطول)</strong> لكل مشروع وكل مشرف. هذه البيانات تُستخدم بشكل أساسي في نظام التوصيات الذكية لاقتراح المشرف الأقرب جغرافياً لكل مشروع جديد.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📍</span> طريقة الاستخدام</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>اختر نوع الكيان:</strong> "مشروع" أو "مشرف" من القائمة</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>ابحث/اختر الكيان:</strong> اختر المشروع من قائمة المشاريع أو اكتب اسم المشرف</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>أدخل الإحداثيات:</strong> خط العرض (latitude) وخط الطول (longitude)</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>احفظ:</strong> اضغط "💾 حفظ الإحداثيات"</div>
+      </div>
+    </div>
+    <p>يمكن عرض كل الإحداثيات المحفوظة في جدول (مشاريع أو مشرفين) بأزرار "عرض المشاريع" / "عرض المشرفين".</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🌊</span> المسارات الجغرافية (Streams)</h3>
+    <p>بالضغط على "🔄 تحديث المسارات"، يُحلّل النظام الإحداثيات ويجمّع المشاريع في <strong>مسارات جغرافية</strong> (مجموعات مشاريع متقاربة في الموقع، يصلح إسنادها لمشرف واحد لتقليل وقت التنقل).</p>
+    <p>هذه المسارات تُستخدم في <strong>محرك جدولة المسارات (Stream Scheduling)</strong> لاقتراح جدولة ذكية جغرافياً.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 14: AUTO SCHEDULING ════════════════════════ -->
+<div id="scheduling" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="🤖">
+    <span class="tab-num">التبويب الثالث عشر</span>
+    <h2>🤖 الجدولة التلقائية ومحرك المسارات</h2>
+    <p>محركان ذكيان يقترحان جدولة المشاريع "لم تبدأ" بناءً على طاقة المشرفين والقرب الجغرافي</p>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3><span class="icon">🤖</span> المحرك الكلاسيكي (Classic)</h3>
+      <p>يحلل "طاقة" كل مشرف (عدد مشاريعه الجارية × مددها) ويقترح توزيع المشاريع "لم تبدأ" على المشرفين مع مراعاة التوازن في الأحمال.</p>
+    </div>
+    <div class="card">
+      <h3><span class="icon">🌊</span> محرك المسارات (Streams)</h3>
+      <p>يستخدم الإحداثيات الجغرافية لتحديد المسار الجغرافي الأمثل لكل مشروع جديد، ويقترح إسناده للمشرف المسؤول عن أقرب مسار جغرافي.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📊</span> نتائج الجدولة</h3>
+    <p>بعد توليد الجدولة، تُعرض نتائج تحتوي:</p>
+    <ul>
+      <li>لكل مشروع "لم يبدأ": المشرف المقترح، تاريخ البدء المقترح، تاريخ الانتهاء</li>
+      <li>مخطط Gantt مبدئي للمشاريع المجدولة</li>
+      <li>تحليلات: إنتاجية الفروع، عبء كل مشرف، ملخص الجدولة</li>
+    </ul>
+    <p>زر <strong>"📥 إرسال إلى الخطة الزمنية"</strong> يُرسل النتائج المقبولة مباشرة لتبويب الخطة الزمنية.</p>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ SECTION 15: RECOMMENDATIONS + INFOGRAPHIC ════════════════════════ -->
+<div id="recommendations" class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="🎯">
+    <span class="tab-num">التبويب الرابع عشر</span>
+    <h2>🎯 التوصيات الذكية الموحدة</h2>
+    <p>يدمج محركَي الجدولة في نتيجة واحدة — 3 سيناريوهات لكل مشروع مع تقييم الثقة والمسافة</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">💡</span> الفكرة المحورية</h3>
+    <p>هذا التبويب هو "الواجهة الموحدة" التي تستدعي <em>كلا المحركين</em> (الكلاسيكي + المسارات الجغرافي)، ثم <strong>تدمج نتائجهما</strong> لتقديم 3 سيناريوهات لكل مشروع "لم يبدأ"، مع درجة ثقة لكل سيناريو وإمكانية المقارنة واختيار الأنسب.</p>
+  </div>
+
+  <!-- INFOGRAPHIC: How Unified Recommendations Work -->
+  <div class="infographic">
+    <div class="infographic-title">🎯 إنفوجرافيك: كيف يعمل نظام التوصيات الذكية الموحدة؟</div>
+    <div class="infographic-subtitle">خريطة بصرية كاملة لمسار توليد التوصيات من البيانات إلى القرار النهائي</div>
+
+    <!-- Step 1: Input -->
+    <div style="text-align:center; margin-bottom:20px;">
+      <div style="display:inline-block; background:#1a3c6e; color:white; padding:14px 30px; border-radius:30px; font-weight:800; font-size:1rem;">📥 المدخلات</div>
+    </div>
+    <div class="flow-row">
+      <div class="flow-box" style="background:linear-gradient(135deg,#1a3c6e,#2980b9)">
+        <div class="flow-icon">📊</div>
+        <div class="flow-title">بيانات المشاريع</div>
+        <div class="flow-sub">أحدث لقطة</div>
+      </div>
+      <div class="flow-arrow">+</div>
+      <div class="flow-box" style="background:linear-gradient(135deg,#27ae60,#1a8a5a)">
+        <div class="flow-icon">🗓️</div>
+        <div class="flow-title">الخطة الزمنية</div>
+        <div class="flow-sub">مشاريع مُسندة للمشرفين</div>
+      </div>
+      <div class="flow-arrow">+</div>
+      <div class="flow-box" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">
+        <div class="flow-icon">🗺️</div>
+        <div class="flow-title">الإحداثيات</div>
+        <div class="flow-sub">مشاريع ومشرفون</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin:20px 0; font-size:2rem; color:#2980b9;">↓</div>
+
+    <!-- Step 2: Filter -->
+    <div style="background:#f8faff; border:1px solid #bfdbfe; border-radius:12px; padding:20px; margin:15px 0; text-align:center;">
+      <strong style="color:#1e40af; font-size:1rem;">🔍 الفلترة: المشاريع المستهدفة</strong>
+      <p style="color:#374151; margin:8px 0 0;">جميع المشاريع بحالة "لم يبدأ" (فلترة اختيارية حسب الفرع)</p>
+    </div>
+
+    <div style="text-align:center; margin:15px 0; font-size:2rem; color:#2980b9;">↓</div>
+
+    <!-- Step 3: Two Engines -->
+    <div style="text-align:center; margin-bottom:15px;">
+      <div style="display:inline-block; background:#8e44ad; color:white; padding:10px 25px; border-radius:20px; font-weight:700;">⚙️ المحركان يعملان معاً</div>
+    </div>
+    <div class="scenario-row" style="gap:20px; margin:15px 0;">
+      <div class="engine-card stream">
+        <h4>🌊 محرك المسارات (Stream Engine)</h4>
+        <ul style="font-size:0.85rem; padding-right:18px;">
+          <li>يُحدد المسار الجغرافي الأنسب</li>
+          <li>يستخدم Haversine للمسافات</li>
+          <li>يُقترح مشرف المسار القريب</li>
+          <li>يُعطي تاريخ بدء وانتهاء مقترحَين</li>
+          <li>يُحدد درجة الثقة الجغرافية</li>
+        </ul>
+      </div>
+      <div style="display:flex; align-items:center; font-size:2rem; color:#8e44ad;">+</div>
+      <div class="engine-card classic">
+        <h4>🤖 المحرك الكلاسيكي (AutoScheduling)</h4>
+        <ul style="font-size:0.85rem; padding-right:18px;">
+          <li>يُحلل طاقة كل مشرف</li>
+          <li>يُوزع المشاريع بالتوازن</li>
+          <li>يُقترح قائمة مشرفين بديلة</li>
+          <li>يُعطي أوزاناً للأولوية</li>
+          <li>يُحسب درجة الثقة الكلاسيكية</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin:20px 0; font-size:2rem; color:#2980b9;">↓</div>
+
+    <!-- Step 4: 3 Scenarios -->
+    <div style="text-align:center; margin-bottom:15px;">
+      <div style="display:inline-block; background:#f39c12; color:white; padding:10px 25px; border-radius:20px; font-weight:700;">🎯 لكل مشروع: 3 سيناريوهات</div>
+    </div>
+    <div class="scenario-row">
+      <div class="scenario-card s1">
+        <div class="s-icon">🌊</div>
+        <div class="s-title" style="color:#1e40af;">السيناريو 1<br>انضمام لمسار قائم</div>
+        <div class="s-desc">من محرك المسارات — مشرف موجود في منطقة المشروع يضم هذا المشروع لمساره الحالي</div>
+      </div>
+      <div class="scenario-card s2">
+        <div class="s-icon">📍</div>
+        <div class="s-title" style="color:#065f46;">السيناريو 2<br>مشرف منفرد جغرافي</div>
+        <div class="s-desc">من الكلاسيكي + الإحداثيات — أقرب مشرف بديل إلى موقع المشروع الجديد</div>
+      </div>
+      <div class="scenario-card s3">
+        <div class="s-icon">🤖</div>
+        <div class="s-title" style="color:#5b21b6;">السيناريو 3<br>جدولة كلاسيكية</div>
+        <div class="s-desc">من المحرك الكلاسيكي فقط — يعتمد على توازن الأحمال والأولويات بدون عامل الموقع</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin:20px 0; font-size:2rem; color:#2980b9;">↓</div>
+
+    <!-- Step 5: Evaluation -->
+    <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin:10px 0;">
+      <div style="text-align:center; font-weight:800; color:var(--primary); margin-bottom:15px;">📊 تقييم كل سيناريو</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px;">
+        <div style="text-align:center; padding:12px; background:#eff6ff; border-radius:8px;">
+          <div style="font-size:1.5rem;">🎯</div>
+          <strong style="color:#1e40af; font-size:0.85rem;">درجة الثقة</strong>
+          <div style="font-size:0.8rem; color:#374151; margin-top:4px;">0-100 بناءً على توافق النوع والقرب والطاقة</div>
+        </div>
+        <div style="text-align:center; padding:12px; background:#f0fdf4; border-radius:8px;">
+          <div style="font-size:1.5rem;">📏</div>
+          <strong style="color:#065f46; font-size:0.85rem;">المسافة الجغرافية</strong>
+          <div style="font-size:0.8rem; color:#374151; margin-top:4px;">بالكيلومتر (Haversine Formula)</div>
+        </div>
+        <div style="text-align:center; padding:12px; background:#f5f3ff; border-radius:8px;">
+          <div style="font-size:1.5rem;">🏷️</div>
+          <strong style="color:#5b21b6; font-size:0.85rem;">توافق النوع</strong>
+          <div style="font-size:0.8rem; color:#374151; margin-top:4px;">هل المشرف يعمل في نفس نوع المشروع؟</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin:20px 0; font-size:2rem; color:#2980b9;">↓</div>
+
+    <!-- Step 6: Output -->
+    <div style="background:linear-gradient(135deg,#0d1f3c,#1a3c6e); color:white; border-radius:12px; padding:25px; text-align:center;">
+      <div style="font-size:1.5rem; font-weight:800; margin-bottom:15px;">📤 المخرجات النهائية</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; text-align:center;">
+        <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:14px;">
+          <div style="font-size:1.3rem;">📊</div>
+          <div style="font-size:0.85rem; margin-top:6px;">جدول التوصيات<br>مع 3 سيناريوهات</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:14px;">
+          <div style="font-size:1.3rem;">📈</div>
+          <div style="font-size:0.85rem; margin-top:6px;">KPIs الموحدة<br>(نسب التغطية)</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:14px;">
+          <div style="font-size:1.3rem;">🔮</div>
+          <div style="font-size:0.85rem; margin-top:6px;">تحليل "ماذا لو؟"<br>(What-If)</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:14px;">
+          <div style="font-size:1.3rem;">📊</div>
+          <div style="font-size:0.85rem; margin-top:6px;">تصدير Excel<br>بكل السيناريوهات</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:14px;">
+          <div style="font-size:1.3rem;">✅</div>
+          <div style="font-size:0.85rem; margin-top:6px;">تطبيق التوصيات<br>→ الخطة الزمنية</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed description -->
+  <div class="card">
+    <h3><span class="icon">🔍</span> شرح تفصيلي لعملية التوليد</h3>
+
+    <h4>أ) فلتر البيانات</h4>
+    <p>يُجلب أحدث لقطة وتُستخرج جميع المشاريع بحالة "لم يبدأ"، مع تطبيق فلتر الجهة إن وُجد.</p>
+
+    <h4>ب) حساب المسافة الجغرافية</h4>
+    <div class="formula-box">
+      <div class="formula-label">معادلة Haversine (مسافة دائرة كبيرة):</div>
+      R = 6371 كم (نصف قطر الأرض)<br>
+      d = <code>2R × arcsin(√(sin²(Δlat/2) + cos(lat1) × cos(lat2) × sin²(Δlon/2)))</code>
+    </div>
+
+    <h4>ج) درجة الثقة (Confidence Score)</h4>
+    <p>لكل مشرف بديل:</p>
+    <ul>
+      <li>ثقة الكلاسيكي (بناءً على طاقة وأولوية)</li>
+      <li>مكافأة قرب جغرافي: +15 إذا المسافة &lt;10 كم، +8 إذا &lt;25 كم</li>
+      <li>لا خصم لاختلاف النوع (يُعرض تنبيه فقط)</li>
+    </ul>
+
+    <h4>د) تحليل "ماذا لو؟" (What-If)</h4>
+    <p>يُحاكي سيناريوهات بديلة مثل "ماذا لو زدنا طاقة مشرف X؟" أو "ماذا لو أسندنا مشاريع منطقة Y لمشرف Z؟" — يُعيد حساب التوصيات بناءً على الفرضية المُدخَلة.</p>
+
+    <h4>هـ) تطبيق التوصيات</h4>
+    <p>زر "✅ تطبيق الكل" يُرسل التوصيات المختارة (السيناريو المُختار لكل مشروع) مباشرة لقاعدة بيانات "الخطة الزمنية" — تظهر بعدها في تبويب الخطة الزمنية ومخطط Gantt.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📊</span> مؤشرات KPI الموحدة</h3>
+    <p>تُظهر في أعلى نتائج التوصيات:</p>
+    <table class="info-table">
+      <thead><tr><th>المؤشر</th><th>المعنى</th></tr></thead>
+      <tbody>
+        <tr><td>نسبة التغطية بالمسارات</td><td>كم % من المشاريع "لم تبدأ" تم تحديد مسار جغرافي لها</td></tr>
+        <tr><td>نسبة التغطية الكلاسيكية</td><td>كم % تم إسناده لمشرف بالمحرك الكلاسيكي</td></tr>
+        <tr><td>متوسط درجة الثقة</td><td>متوسط درجات الثقة للتوصية المختارة</td></tr>
+        <tr><td>نسبة توافق النوع</td><td>كم % من التوصيات المشرف فيها يعمل بنفس نوع المشروع</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════ FINAL NOTES ════════════════════════ -->
+<div class="page-break">
+<div class="section">
+  <div class="section-header" data-icon="📌">
+    <span class="tab-num">ملاحظات ختامية</span>
+    <h2>📌 نصائح للمطورين وملاحظات تقنية</h2>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">💻</span> للمطور: النقاط الحرجة عند إعادة البناء</h3>
+    <ol>
+      <li><strong>المعادلة الموحدة vs. المبسطة:</strong> تبويب "مؤشرات أداء الفروع" يستخدم نسخة مبسطة من <code>calculateTotalProgress</code> لا تُعامل "نفاذ وكور" بالشكل الصحيح (تضعها في الافتراضي بدل الفني100%). ابنِ نسختين واضحتين.</li>
+      <li><strong>تاريخ المرجع:</strong> بعض التقارير تستخدم <code>new Date()</code> (اليوم الفعلي)، وأخرى تستخدم تاريخ التقرير المختار. كن دقيقاً في التمييز.</li>
+      <li><strong>أيام الجمعة:</strong> CPM تستثني الجمعة. باقي التبويبات لا تستثنيها.</li>
+      <li><strong>IndexedDB:</strong> جميع البيانات في قاعدة بيانات داخل المتصفح بدون خادم — وظائف <code>saveAppData</code> و<code>loadAppData</code> هي الواجهة الوحيدة لها.</li>
+      <li><strong>زرا PDF وExcel في تفاصيل المشروع:</strong> الزرّان موجودان في الواجهة لكن الدوال غير معرّفة فعلياً — يتطلبان تطويراً.</li>
+      <li><strong>المسافة الجغرافية:</strong> تُحسب بمعادلة Haversine (نصف قطر الأرض = 6371 كم).</li>
+    </ol>
+  </div>
+
+  <div class="card warning">
+    <h3><span class="icon">⚠️</span> أهم الفروق الدقيقة بين التبويبات</h3>
+    <table class="info-table">
+      <thead><tr><th>المؤشر/المفهوم</th><th>التبويب الأول</th><th>التبويب الثاني</th></tr></thead>
+      <tbody>
+        <tr><td>"الشيخوخة"</td><td>مركز الإحصائيات: مشاريع >365 يوم بالعمر</td><td>مؤشرات الفروع: نسبة الوقت المستهلك vs. الإنجاز</td></tr>
+        <tr><td>"قرب الإنجاز"</td><td>KPI Dashboard: يشترط مدني≥90% وفني≥90% معاً</td><td>نظام التقارير: يقبل حالات بديلة (فني=0 أو مدني بين 80-90%)</td></tr>
+        <tr><td>"المشاريع المتوقفة"</td><td>KPI Dashboard: مقارنة آخر لقطتين فقط</td><td>تقرير المتوقفة: نافذة زمنية قابلة للتخصيص (افتراضي 4 أسابيع)</td></tr>
+        <tr><td>المتوسط الكلي</td><td>تفاصيل المشروع: (مدني+فني)/2 تبسيطياً</td><td>كل تقرير آخر: <code>calculateTotalProgress</code> بالأوزان</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card success">
+    <h3><span class="icon">✅</span> ملخص تبويبات النظام الكاملة</h3>
+    <table class="info-table">
+      <thead><tr><th>#</th><th>التبويب</th><th>الوظيفة الرئيسية</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>📁 إدارة البيانات</td><td>رفع Excel، السجل الزمني، النسخ الاحتياطي</td></tr>
+        <tr><td>2</td><td>📊 التقارير</td><td>18 تقريراً جاهزاً مع طباعة وتصدير Excel</td></tr>
+        <tr><td>3</td><td>📈 لوحة المؤشرات (KPI)</td><td>4 بطاقات + جدول + تصنيف المشاريع</td></tr>
+        <tr><td>4</td><td>📉 التحليلات المرئية</td><td>6 رسوم بيانية تفاعلية (S-Curve، مقارنة، توزيع...)</td></tr>
+        <tr><td>5</td><td>🔍 تحليل الأداء</td><td>5 رسوم تاريخية + KPI Trend + أدوات تحليل</td></tr>
+        <tr><td>6</td><td>📋 تفاصيل المشروع</td><td>بطاقة كاملة + توقعات ذكية + سجل تاريخي</td></tr>
+        <tr><td>7</td><td>📊 مؤشرات EVM</td><td>القيمة المكتسبة (Schedule-Driven) + سجل إداري</td></tr>
+        <tr><td>8</td><td>📊 مركز الإحصائيات</td><td>3 Gauges + 4 بطاقات + كل رقم قابل للنقر</td></tr>
+        <tr><td>9</td><td>⏱️ الزمن الحرج (CPM)</td><td>بنود المشروع + ES/EF/LS/LF + Gantt + المسار الحرج</td></tr>
+        <tr><td>10</td><td>📊 مؤشرات الفروع</td><td>7 مؤشرات شهرية + مصفوفة مقارنة بين الفروع</td></tr>
+        <tr><td>11</td><td>🗓️ الخطة الزمنية</td><td>جدولة يدوية + Gantt + تقرير انحرافات</td></tr>
+        <tr><td>12</td><td>🗺️ إدارة المواقع</td><td>إحداثيات المشاريع والمشرفين + مسارات جغرافية</td></tr>
+        <tr><td>13</td><td>🤖 الجدولة التلقائية</td><td>محرك كلاسيكي + محرك مسارات جغرافي</td></tr>
+        <tr><td>14</td><td>🎯 التوصيات الموحدة</td><td>دمج المحركين + 3 سيناريوهات لكل مشروع</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center; padding:40px 20px; color:var(--text-muted); font-size:0.9rem; border-top:2px solid var(--border); margin-top:40px;">
+    <p style="font-size:1.1rem; color:var(--primary); font-weight:700; margin-bottom:10px;">📘 الدليل الإرشادي الشامل — نظام تحليل وإدارة المشاريع</p>
+    <p>هذا الدليل يُغطي كل التبويبات، التقارير، الرسوم البيانية، والمعادلات في النظام بشكل كامل.</p>
+    <p style="margin-top:8px;">يمكن لأي مطور يقرأ هذا الدليل إعادة بناء النظام بالكامل بدقة.</p>
+  </div>
+</div>
+</div>
+
+</body>
+</html>`;
+
+fs.writeFileSync('/mnt/user-data/outputs/دليل_نظام_إدارة_المشاريع.html', html);
+console.log('✅ Guide created successfully!');
+console.log('File size:', (html.length / 1024).toFixed(1), 'KB');
