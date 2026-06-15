@@ -4896,6 +4896,14 @@ function _createPrintProxy() {
                     <div id="__print_content__"></div>`;
                 document.body.appendChild(overlay);
                 overlay.querySelector('#__print_content__').innerHTML = _html;
+                /* تنفيذ script tags المضمّنة (innerHTML لا يُنفّذها تلقائياً) */
+                try {
+                    overlay.querySelector('#__print_content__').querySelectorAll('script').forEach(function(s){
+                        var ns=document.createElement('script'); ns.textContent=s.textContent;
+                        document.body.appendChild(ns);
+                        setTimeout(function(){try{document.body.removeChild(ns);}catch(e){}},400);
+                    });
+                } catch(ex){ console.warn('script exec:', ex); }
                 let styleEl = document.getElementById('__print_style__');
                 if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = '__print_style__'; document.head.appendChild(styleEl); }
                 styleEl.textContent = '@media print { body > *:not(#__print_overlay__) { display:none !important; } #__print_overlay__ { position:static !important; overflow:visible !important; } #__print_bar__ { display:none !important; } }';
@@ -27096,6 +27104,51 @@ document.addEventListener('DOMContentLoaded', () => {
         try { return JSON.parse(localStorage.getItem(PNOTES_KEY)||'{}'); } catch(e) { return {}; }
     }
 
+    function exportProjNotes() {
+        try {
+            const notes = loadAllProjNotes();
+            const count = Object.keys(notes).length;
+            if (!count) { alert('لا توجد تدوينات محفوظة للتصدير.'); return; }
+            const json = JSON.stringify(notes, null, 2);
+            const blob = new Blob([json], {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'project_notes_' + new Date().toISOString().slice(0,10) + '.json';
+            document.body.appendChild(a); a.click();
+            setTimeout(()=>{ try{document.body.removeChild(a); URL.revokeObjectURL(url);}catch(e){} }, 1000);
+            typeof showNotification==='function' && showNotification('✅ تم تصدير ' + count + ' تدوينة', 'success');
+        } catch(e) { alert('خطأ في التصدير: ' + e.message); }
+    }
+
+    function importProjNotes() {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = '.json';
+        input.onchange = e => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                try {
+                    const imported = JSON.parse(ev.target.result);
+                    if (typeof imported !== 'object' || Array.isArray(imported)) throw new Error('تنسيق غير صحيح');
+                    const current = loadAllProjNotes();
+                    const merged = Object.assign({}, current, imported);
+                    localStorage.setItem(PNOTES_KEY, JSON.stringify(merged));
+                    const count = Object.keys(imported).length;
+                    typeof showNotification==='function'
+                        ? showNotification('✅ تم استيراد ودمج ' + count + ' تدوينة', 'success')
+                        : alert('✅ تم استيراد ودمج ' + count + ' تدوينة بنجاح.');
+                } catch(err) { alert('خطأ في قراءة الملف: ' + err.message); }
+            };
+            reader.readAsText(file);
+        };
+        document.body.appendChild(input); input.click();
+        setTimeout(()=>{ try{document.body.removeChild(input);}catch(e){} }, 2000);
+    }
+
+    window.mrExportNotes = exportProjNotes;
+    window.mrImportNotes = importProjNotes;
+
     /* ── المحرك التحليلي ── */
     function buildReportData(startDateStr, endDateStr, label, branchFilter) {
         const sorted = [...(projectsDatabase.timeline||[])]
@@ -27216,12 +27269,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const avgEndDevPct = endDevPcts.length
             ? Math.round(endDevPcts.reduce((s,v)=>s+v,0)/endDevPcts.length*10)/10 : null;
 
+        /* 7) إحصاء تفصيلي للانحراف */
+        const completedLate    = completedProjects.filter(p=>p.deviationDays!==null && p.deviationDays>0).length;
+        const completedOnTime  = completedProjects.filter(p=>p.deviationDays!==null && p.deviationDays===0).length;
+        const completedEarly   = completedProjects.filter(p=>p.deviationDays!==null && p.deviationDays<0).length;
+        const startedLate      = startedProjects.filter(p=>p.deviationDays!==null && p.deviationDays>0).length;
+        const startedOnTime    = startedProjects.filter(p=>p.deviationDays!==null && p.deviationDays===0).length;
+        const startedEarly     = startedProjects.filter(p=>p.deviationDays!==null && p.deviationDays<0).length;
+
         return {
             label, startSnapDate:startSnap.date, endSnapDate:endSnap.date, branchFilter,
             progressProjects, completedProjects, startedProjects,
             branchSummary, typeSummary,
             avgStartDevPct, avgEndDevPct,
             startDevCount: startDevPcts.length, endDevCount: endDevPcts.length,
+            completedLate, completedOnTime, completedEarly,
+            startedLate, startedOnTime, startedEarly,
             allProjNotes: loadAllProjNotes(),
         };
     }
@@ -27410,6 +27473,43 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
   </div>
 </div>
 
+<div style="margin:0 30px 24px;display:flex;gap:16px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:250px;background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.07);border-right:5px solid #10b981;">
+    <div style="font-weight:800;color:#065f46;margin-bottom:12px;font-size:.92rem;">✅ تحليل انحراف المشاريع المُنجزة (${d.completedProjects.length})</div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;text-align:center;background:#fef2f2;border-radius:8px;padding:10px 6px;">
+        <div style="font-size:1.8rem;font-weight:900;color:#dc2626;">${d.completedLate}</div>
+        <div style="font-size:.73rem;color:#991b1b;margin-top:3px;font-weight:600;">🔴 متأخرة</div>
+      </div>
+      <div style="flex:1;text-align:center;background:#f0fdf4;border-radius:8px;padding:10px 6px;">
+        <div style="font-size:1.8rem;font-weight:900;color:#16a34a;">${d.completedOnTime}</div>
+        <div style="font-size:.73rem;color:#166534;margin-top:3px;font-weight:600;">✅ وفق الخطة</div>
+      </div>
+      <div style="flex:1;text-align:center;background:#eff6ff;border-radius:8px;padding:10px 6px;">
+        <div style="font-size:1.8rem;font-weight:900;color:#2563eb;">${d.completedEarly}</div>
+        <div style="font-size:.73rem;color:#1d4ed8;margin-top:3px;font-weight:600;">⚡ مبكرة</div>
+      </div>
+    </div>
+  </div>
+  <div style="flex:1;min-width:250px;background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.07);border-right:5px solid #f59e0b;">
+    <div style="font-weight:800;color:#92400e;margin-bottom:12px;font-size:.92rem;">🚀 تحليل انحراف المشاريع المنطلقة (${d.startedProjects.length})</div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;text-align:center;background:#fef2f2;border-radius:8px;padding:10px 6px;">
+        <div style="font-size:1.8rem;font-weight:900;color:#dc2626;">${d.startedLate}</div>
+        <div style="font-size:.73rem;color:#991b1b;margin-top:3px;font-weight:600;">🔴 متأخرة البدء</div>
+      </div>
+      <div style="flex:1;text-align:center;background:#f0fdf4;border-radius:8px;padding:10px 6px;">
+        <div style="font-size:1.8rem;font-weight:900;color:#16a34a;">${d.startedOnTime}</div>
+        <div style="font-size:.73rem;color:#166534;margin-top:3px;font-weight:600;">✅ وفق الخطة</div>
+      </div>
+      <div style="flex:1;text-align:center;background:#eff6ff;border-radius:8px;padding:10px 6px;">
+        <div style="font-size:1.8rem;font-weight:900;color:#2563eb;">${d.startedEarly}</div>
+        <div style="font-size:.73rem;color:#1d4ed8;margin-top:3px;font-weight:600;">⚡ مبكرة البدء</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <h3 class="mr-section">1️⃣ المشاريع التي تحدّثت نسب إنجازها (${d.progressProjects.length})</h3>
 <div class="tbl-wrap">${progressTbl(d.progressProjects)}</div>
 
@@ -27535,6 +27635,12 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
           </div>
 
           <div id="mr-info" style="background:#eff6ff;border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:.82rem;color:#1e40af;line-height:1.8;min-height:44px;"></div>
+
+          <div style="display:flex;gap:8px;margin-bottom:12px;padding:10px 14px;background:#fffbeb;border-radius:8px;border:1.5px solid #fcd34d;align-items:center;flex-wrap:wrap;">
+            <span style="font-weight:700;color:#92400e;font-size:.82rem;flex:1;min-width:120px;">📝 تدوينات المهندسين:</span>
+            <button onclick="mrExportNotes()" style="padding:7px 14px;background:#d97706;color:#fff;border:0;border-radius:6px;cursor:pointer;font-family:Cairo;font-size:.82rem;font-weight:600;">⬇️ تصدير</button>
+            <button onclick="mrImportNotes()" style="padding:7px 14px;background:#2563eb;color:#fff;border:0;border-radius:6px;cursor:pointer;font-family:Cairo;font-size:.82rem;font-weight:600;">⬆️ استيراد ودمج</button>
+          </div>
 
           <div style="display:flex;gap:10px;justify-content:flex-end;">
             <button id="mr-cancel" style="padding:10px 22px;border:1.5px solid #cbd5e1;background:#fff;border-radius:8px;cursor:pointer;font-family:Cairo;font-size:.9rem;color:#374151;">إلغاء</button>
