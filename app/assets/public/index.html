@@ -26935,7 +26935,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return (civil*4+tech)/5;
     }
     function isCompleted(p) { return ['منجز','مكتمل','مسلم','مقفل','جاري الاقفال','جاري الإقفال'].some(k=>(p.status||'').includes(k)); }
-    function isInProgress(p) { return (p.status||'').includes('جاري'); }
+    function isInProgress(p) {
+        const s = (p.status||'');
+        if (['منجز','مكتمل','مسلم','مقفل','جاري الاقفال','جاري الإقفال'].some(k=>s.includes(k))) return false;
+        return s.includes('جاري');
+    }
     function isNotStarted(p) { const s=p.status||''; return s.includes('لم يبدأ')||s.includes('لم يبداء'); }
     function pKey(p) { return (p.projectNumber||p.projectName||'').toString().trim(); }
     function daysDiff(d1,d2) {
