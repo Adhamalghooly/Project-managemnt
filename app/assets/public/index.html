@@ -27028,29 +27028,54 @@ document.addEventListener('DOMContentLoaded', () => {
         const a=new Date(d1),b=new Date(d2);
         return (isNaN(a)||isNaN(b)) ? null : Math.round((b-a)/86400000);
     }
-    function snapBefore(iso) {
-        const snaps=[...(projectsDatabase.timeline||[])].sort((a,b)=>new Date(a.date)-new Date(b.date));
-        const t=new Date(iso).getTime(); let c=null;
-        for(const s of snaps){ if(new Date(s.date).getTime()<=t) c=s; else break; }
-        return c;
-    }
-    function snapAfter(iso) {
-        const snaps=[...(projectsDatabase.timeline||[])].sort((a,b)=>new Date(a.date)-new Date(b.date));
-        const t=new Date(iso).getTime();
-        for(const s of snaps){ if(new Date(s.date).getTime()>=t) return s; }
-        return snaps[snaps.length-1]||null;
-    }
+    function pad2(n){ return String(n).padStart(2,'0'); }
     function loadNotes(year,month) {
         try{ const a=JSON.parse(localStorage.getItem(DB_NOTES_KEY)||'{}'); return a[year+'-'+month]||''; }catch(e){return '';}
     }
 
     /* ── المحرك التحليلي ── */
     function buildReportData(year, monthIdx) {
-        const monthStart = new Date(year, monthIdx, 1);
-        const monthEnd   = new Date(year, monthIdx+1, 0, 23, 59, 59);
-        let startSnap = snapBefore(monthStart.toISOString()) || snapAfter(monthStart.toISOString());
-        let endSnap   = snapBefore(monthEnd.toISOString())   || startSnap;
-        if (!startSnap||!endSnap) return { error: 'لا توجد بيانات (snapshots) لهذا الشهر.' };
+        // مقارنة بالتواريخ النصية فقط (YYYY-MM-DD) لتجنب مشاكل المناطق الزمنية تماماً
+        const monthStartStr = `${year}-${pad2(monthIdx+1)}-01`;
+        const lastDay = new Date(year, monthIdx+1, 0).getDate();
+        const monthEndStr   = `${year}-${pad2(monthIdx+1)}-${pad2(lastDay)}`;
+
+        const sorted = [...(projectsDatabase.timeline||[])]
+            .filter(e => e && e.date)
+            .sort((a,b) => a.date.localeCompare(b.date));
+
+        if (!sorted.length) return { error: 'لا توجد بيانات في قاعدة البيانات. يرجى تحميل ملفات البيانات أولاً.' };
+
+        // startSnap: آخر snapshot قبل بداية الشهر (تاريخه < أول يوم من الشهر)
+        let startSnap = null;
+        for (const s of sorted) {
+            if (s.date < monthStartStr) startSnap = s;
+            else break;
+        }
+
+        // endSnap: آخر snapshot ضمن الشهر أو قبل نهايته
+        let endSnap = null;
+        for (const s of sorted) {
+            if (s.date <= monthEndStr) endSnap = s;
+            else break;
+        }
+
+        // إذا لم يوجد endSnap: لا بيانات حتى نهاية هذا الشهر
+        if (!endSnap) return { error: `لا توجد بيانات بتاريخ ${ARABIC_MONTHS[monthIdx]} ${year} أو قبله.` };
+
+        // إذا لم يوجد startSnap: لا بيانات قبل الشهر — نستخدم أول snapshot متاح كبديل
+        if (!startSnap) {
+            if (sorted.length < 2) {
+                return { error: `يحتاج التقرير الشهري إلى بيانات من فترتين مختلفتين. يوجد حالياً snapshot واحد فقط بتاريخ ${sorted[0].date}.\nيرجى تحميل بيانات لفترة سابقة للمقارنة.` };
+            }
+            // أقدم snapshot متاح كنقطة بداية
+            startSnap = sorted[0];
+        }
+
+        // إذا كان startSnap = endSnap لا يمكن المقارنة
+        if (startSnap.date === endSnap.date) {
+            return { error: `جميع البيانات المتاحة تعود لنفس التاريخ (${startSnap.date}). يرجى تحميل بيانات لفترة أخرى للمقارنة.` };
+        }
 
         const startMap=new Map(), endMap=new Map();
         (startSnap.projects||[]).forEach(p=>startMap.set(pKey(p),p));
@@ -27061,7 +27086,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const progressProjects=[];
         new Set([...startMap.keys(),...endMap.keys()]).forEach(k=>{
             let pEnd=endMap.get(k), pStart=startMap.get(k);
-            if(!pEnd){ for(const e of sortedTL){ if(new Date(e.date)<=monthEnd){ const f=e.projects.find(p=>pKey(p)===k); if(f){pEnd=f;break;} } } }
+            if(!pEnd){ for(const e of sortedTL){ if(e.date<=monthEndStr){ const f=e.projects.find(p=>pKey(p)===k); if(f){pEnd=f;break;} } } }
             if(!pEnd||!pStart) return;
             const ep=calcProgress(pEnd), sp=calcProgress(pStart), diff=ep-sp;
             if(diff>0) progressProjects.push({
