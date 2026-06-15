@@ -27255,7 +27255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         /* 4+5) خلاصة الفروع والأنواع */
         const branchSummary={}, typeSummary={};
-        const addTo=(obj,key,field)=>{ if(!obj[key]) obj[key]={progress:0,completed:0,started:0,endDevPcts:[],startDevPcts:[]}; obj[key][field]++; };
+        const addTo=(obj,key,field)=>{ if(!obj[key]) obj[key]={progress:0,completed:0,started:0,preAudit:0,fileDelivered:0,endDevPcts:[],startDevPcts:[]}; obj[key][field]++; };
         progressProjects.forEach(p=>{ addTo(branchSummary,p.executingEntity||'غير محدد','progress'); addTo(typeSummary,p.projectType||'غير محدد','progress'); });
         completedProjects.forEach(p=>{
             const bk=p.executingEntity||'غير محدد', tk=p.projectType||'غير محدد';
@@ -27267,6 +27267,66 @@ document.addEventListener('DOMContentLoaded', () => {
             addTo(branchSummary,bk,'started'); if(p.devPct!==null) branchSummary[bk].startDevPcts.push(p.devPct);
             addTo(typeSummary,tk,'started'); if(p.devPct!==null) typeSummary[tk].startDevPcts.push(p.devPct);
         });
+
+        /* NEW-A) مشاريع تم تسليم ملفاتها:
+           تحولت الحالة الفرعية من "فحص أولي" إلى أي حالة أخرى خلال الفترة،
+           والحالة الرئيسية في النهاية: منجز أو جاري الاقفال أو مسلم أو مقفل */
+        const fileDeliveredProjects=[];
+        endMap.forEach((pEnd,k)=>{
+            const pStart=startMap.get(k);
+            if(!pStart) return;
+            if(branchFilter && pEnd.executingEntity!==branchFilter) return;
+            const startSub=(pStart.subStatus||'').trim();
+            const endSub=(pEnd.subStatus||'').trim();
+            const mainSt=(pEnd.status||'').trim();
+            const wasPreAudit=startSub.includes('فحص أولي')||startSub.includes('فحص اولي');
+            const isNowDiff=!endSub.includes('فحص أولي')&&!endSub.includes('فحص اولي');
+            const validMain=['منجز','مكتمل','جاري الاقفال','جاري الإقفال','مسلم','مقفل'].some(s=>mainSt.includes(s));
+            if(wasPreAudit&&isNowDiff&&validMain){
+                fileDeliveredProjects.push({
+                    projectNumber:pEnd.projectNumber, projectName:pEnd.projectName,
+                    executingEntity:pEnd.executingEntity, projectType:pEnd.projectType,
+                    status:pEnd.status, subStatus:pEnd.subStatus, prevSubStatus:pStart.subStatus,
+                });
+                const bk=pEnd.executingEntity||'غير محدد', tk=pEnd.projectType||'غير محدد';
+                addTo(branchSummary,bk,'fileDelivered'); addTo(typeSummary,tk,'fileDelivered');
+            }
+        });
+
+        /* NEW-B) مشاريع فحص أولي:
+           الحالة الرئيسية "منجز" فقط، والحالة الفرعية "فحص أولي" أو "منجز" */
+        const preAuditNowProjects=[];
+        const _todayStr=new Date().toISOString().split('T')[0];
+        endMap.forEach((pEnd,k)=>{
+            if(branchFilter && pEnd.executingEntity!==branchFilter) return;
+            const mainSt=(pEnd.status||'').trim();
+            const subSt=(pEnd.subStatus||'').trim();
+            const mainIsCompleted=mainSt==='منجز'||mainSt==='مكتمل';
+            const subIsPreAudit=subSt.includes('فحص أولي')||subSt.includes('فحص اولي');
+            const subIsCompleted=subSt==='منجز'||subSt==='مكتمل';
+            if(!mainIsCompleted||(!(subIsPreAudit||subIsCompleted))) return;
+            let daysSince=null;
+            if(subIsPreAudit){
+                const sd=parseDateStr(pEnd.statusDate);
+                if(sd){ const diff=daysDiff(sd,_todayStr); if(diff!==null&&diff>=0) daysSince=diff; }
+                if(daysSince===null){
+                    const fsd=firstStatusDate(k,p=>(p.subStatus||'').includes('فحص أولي')||(p.subStatus||'').includes('فحص اولي'));
+                    if(fsd){ const diff=daysDiff(fsd,_todayStr); if(diff!==null&&diff>=0) daysSince=diff; }
+                }
+            }
+            preAuditNowProjects.push({
+                projectNumber:pEnd.projectNumber, projectName:pEnd.projectName,
+                executingEntity:pEnd.executingEntity, projectType:pEnd.projectType,
+                status:pEnd.status, subStatus:pEnd.subStatus, daysSince,
+            });
+            const bk=pEnd.executingEntity||'غير محدد', tk=pEnd.projectType||'غير محدد';
+            addTo(branchSummary,bk,'preAudit'); addTo(typeSummary,tk,'preAudit');
+        });
+        const _preAuditDaysArr=preAuditNowProjects
+            .filter(p=>(p.subStatus||'').includes('فحص أولي')||(p.subStatus||'').includes('فحص اولي'))
+            .map(p=>p.daysSince).filter(d=>d!==null&&d>=0);
+        const avgPreAuditDays=_preAuditDaysArr.length>0
+            ? Math.round(_preAuditDaysArr.reduce((s,v)=>s+v,0)/_preAuditDaysArr.length) : null;
 
         /* 6) متوسط نسبة الانحراف الزمني */
         const startDevPcts = startedProjects.filter(p=>p.devPct!==null).map(p=>p.devPct);
@@ -27288,6 +27348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             label, startSnapDate:startSnap.date, endSnapDate:endSnap.date, branchFilter,
             progressProjects, completedProjects, startedProjects,
+            fileDeliveredProjects, preAuditNowProjects, avgPreAuditDays,
             branchSummary, typeSummary,
             avgStartDevPct, avgEndDevPct,
             startDevCount: startDevPcts.length, endDevCount: endDevPcts.length,
@@ -27402,6 +27463,38 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
+        function fileDeliveredTbl(list) {
+            if (!list.length) return '<p style="padding:12px;color:#64748b;">لا توجد مشاريع تم تسليم ملفاتها في هذه الفترة.</p>';
+            return `<table class="mr-tbl"><thead><tr>
+                <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th>
+                <th>الحالة الرئيسية</th><th>الحالة الفرعية السابقة</th><th>الحالة الفرعية الحالية</th>
+            </tr></thead><tbody>${list.map(p=>`<tr>
+                <td>${p.projectNumber||'—'}</td>
+                <td style="text-align:right;max-width:220px;">${p.projectName||'—'}</td>
+                <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td>
+                <td style="color:#059669;font-weight:700;">${p.status||'—'}</td>
+                <td style="color:#dc2626;">${p.prevSubStatus||'فحص أولي'}</td>
+                <td style="color:#0e7490;font-weight:700;">${p.subStatus||'—'}</td>
+            </tr>`).join('')}</tbody></table>`;
+        }
+
+        function preAuditTbl(list) {
+            if (!list.length) return '<p style="padding:12px;color:#64748b;">لا توجد مشاريع في مرحلة فحص أولي حالياً.</p>';
+            return `<table class="mr-tbl"><thead><tr>
+                <th>الرقم</th><th>اسم المشروع</th><th>الفرع</th><th>النوع</th>
+                <th>الحالة الرئيسية</th><th>الحالة الفرعية</th><th>عدد الأيام 📅</th>
+            </tr></thead><tbody>${list.map(p=>`<tr>
+                <td>${p.projectNumber||'—'}</td>
+                <td style="text-align:right;max-width:220px;">${p.projectName||'—'}</td>
+                <td>${p.executingEntity||'—'}</td><td>${p.projectType||'—'}</td>
+                <td style="color:#059669;font-weight:700;">${p.status||'—'}</td>
+                <td style="color:#b45309;font-weight:700;">${p.subStatus||'—'}</td>
+                <td style="color:${p.daysSince!==null&&p.daysSince>60?'#dc2626':p.daysSince!==null&&p.daysSince>30?'#d97706':'#059669'};font-weight:700;">
+                    ${p.daysSince!==null?p.daysSince+' يوم':'—'}
+                </td>
+            </tr>`).join('')}</tbody></table>`;
+        }
+
         function summaryTbl(summary, labelCol) {
             const entries=Object.entries(summary).sort((a,b)=>(b[1].progress+b[1].completed*2+b[1].started)-(a[1].progress+a[1].completed*2+a[1].started));
             if (!entries.length) return '<p style="color:#64748b;">لا توجد بيانات.</p>';
@@ -27409,6 +27502,8 @@ document.addEventListener('DOMContentLoaded', () => {
             function devCell(v){ if(v===null) return '<span style="color:#94a3b8;">—</span>'; if(v>0) return `<span style="color:#dc2626;font-weight:700;">+${v}%</span>`; if(v<0) return `<span style="color:#059669;font-weight:700;">${v}%</span>`; return '<span style="color:#059669;font-weight:700;">0%</span>'; }
             return `<table class="mr-tbl"><thead><tr>
                 <th>${labelCol}</th><th>تحدثت 📈</th><th>أُنجزت ✅</th><th>انطلقت 🚀</th>
+                <th style="background:#0e7490;color:#fff;" title="مشاريع تسليم الملفات خلال الفترة">تسليم ملفات 📁</th>
+                <th style="background:#b45309;color:#fff;" title="مشاريع بحالة فرعية فحص أولي أو منجز حالياً">فحص أولي 🔍</th>
                 <th title="متوسط انحراف تاريخ البدء للمشاريع المنطلقة">⏱️ انحراف البدء %</th>
                 <th title="متوسط انحراف تاريخ الانتهاء للمشاريع المنجزة">🏁 انحراف الانتهاء %</th>
             </tr></thead><tbody>${entries.map(([lbl,s])=>`<tr>
@@ -27416,6 +27511,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="color:#2563eb;font-weight:700;">${s.progress}</td>
                 <td style="color:#059669;font-weight:700;">${s.completed}</td>
                 <td style="color:#d97706;font-weight:700;">${s.started}</td>
+                <td style="color:#0e7490;font-weight:700;">${s.fileDelivered||0}</td>
+                <td style="color:#b45309;font-weight:700;">${s.preAudit||0}</td>
                 <td>${devCell(avgPct(s.startDevPcts))}</td>
                 <td>${devCell(avgPct(s.endDevPcts))}</td>
             </tr>`).join('')}</tbody></table>`;
@@ -27431,9 +27528,22 @@ document.addEventListener('DOMContentLoaded', () => {
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Cairo',sans-serif;background:#f1f5f9;color:#1e293b;direction:rtl;padding:0 0 60px}
-@media print{body{background:#fff;padding:0}.no-print{display:none!important}
+@media print{
+  @page{size:A4 landscape;margin:8mm}
+  body{background:#fff;padding:0}
+  .no-print{display:none!important}
   .mr-cover,.mr-kpi,h3.mr-section,table.mr-tbl th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .page-break{page-break-before:always}}
+  .page-break,.mr-section-wrap{page-break-before:always}
+  h3.mr-section{page-break-before:always;page-break-after:avoid;margin-bottom:6px}
+  .tbl-wrap{overflow:visible!important;page-break-inside:auto}
+  table.mr-tbl{font-size:0.62rem!important;table-layout:auto;width:100%!important;border-collapse:collapse!important;page-break-inside:auto}
+  table.mr-tbl th{padding:5px 4px!important;font-size:0.62rem!important;border:1px solid #333!important}
+  table.mr-tbl td{padding:4px!important;border:1px solid #555!important;font-size:0.62rem!important}
+  table.mr-tbl tr{page-break-inside:avoid}
+  .kpi-row{flex-wrap:wrap!important}
+  .mr-kpi{min-width:100px!important;max-width:160px!important;padding:12px 8px!important}
+  .mr-kpi .kpi-num{font-size:1.8rem!important}
+}
 .mr-cover{background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#2563eb 100%);color:#fff;padding:50px 40px;text-align:center;margin-bottom:30px}
 .mr-cover h1{font-size:2rem;font-weight:900;margin-bottom:8px}
 .mr-cover h2{font-size:1.2rem;opacity:.85;margin-bottom:14px}
@@ -27485,6 +27595,14 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
     <div class="kpi-num" style="font-size:1.9rem;">${d.avgEndDevPct===null ? '—' : (d.avgEndDevPct>0?'+':'')+d.avgEndDevPct+'%'}</div>
     <div class="kpi-lbl">🏁 متوسط انحراف<br>تاريخ الانتهاء<br><span style="font-size:.7rem;opacity:.8;">(${d.endDevCount} مشروع)</span></div>
   </div>
+  <div class="mr-kpi" style="background:linear-gradient(135deg,#0e7490,#06b6d4);">
+    <div class="kpi-num">${d.fileDeliveredProjects.length}</div>
+    <div class="kpi-lbl">📁 مشاريع تم<br>تسليم ملفاتها</div>
+  </div>
+  <div class="mr-kpi" style="background:linear-gradient(135deg,#92400e,#d97706);">
+    <div class="kpi-num">${d.preAuditNowProjects.length}</div>
+    <div class="kpi-lbl">🔍 مشاريع<br>فحص أولي<br><span style="font-size:.7rem;opacity:.9;">${d.avgPreAuditDays!==null ? 'متوسط '+d.avgPreAuditDays+' يوم' : '—'}</span></div>
+  </div>
 </div>
 
 <div style="margin:0 30px 24px;display:flex;gap:16px;flex-wrap:wrap;">
@@ -27527,7 +27645,7 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
 <h3 class="mr-section">1️⃣ الخلاصة على مستوى الفرع المنفذ</h3>
 <div class="tbl-wrap">${summaryTbl(d.branchSummary,'الفرع المنفذ')}</div>
 
-<h3 class="mr-section">2️⃣ الخلاصة على مستوى نوع المشروع</h3>
+<h3 class="mr-section page-break">2️⃣ الخلاصة على مستوى نوع المشروع</h3>
 <div class="tbl-wrap">${summaryTbl(d.typeSummary,'نوع المشروع')}</div>
 
 <h3 class="mr-section page-break">3️⃣ المشاريع التي تحدّثت نسب إنجازها (${d.progressProjects.length})</h3>
@@ -27544,6 +27662,12 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
   <button class="dev-filter-btn no-print" id="dfb-started" onclick="toggleDev('started')">🔴 المتأخرة فقط</button>
 </h3>
 <div class="tbl-wrap" id="wrap-started">${startedTbl(d.startedProjects)}</div>
+
+<h3 class="mr-section page-break" style="background:linear-gradient(90deg,#0e7490,#06b6d4);">6️⃣ مشاريع تم تسليم ملفاتها (${d.fileDeliveredProjects.length}) — تحولت من فحص أولي خلال الفترة</h3>
+<div class="tbl-wrap">${fileDeliveredTbl(d.fileDeliveredProjects)}</div>
+
+<h3 class="mr-section page-break" style="background:linear-gradient(90deg,#92400e,#d97706);">7️⃣ مشاريع فحص أولي (${d.preAuditNowProjects.length}) — حالة رئيسية منجز${d.avgPreAuditDays!==null?' | متوسط '+d.avgPreAuditDays+' يوم في الفحص الأولي':''}</h3>
+<div class="tbl-wrap">${preAuditTbl(d.preAuditNowProjects)}</div>
 
 <div class="sig-row">
   <div class="sig-box"><div class="sig-label">مُعِدّ التقرير</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
