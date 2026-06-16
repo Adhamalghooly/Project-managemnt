@@ -29030,9 +29030,35 @@ const CapacityScheduler = (function() {
     if (isNaN(a)||isNaN(b)) return 0;
     return Math.max(0, Math.round((b-a)/86400000));
   }
-  function _calcActualDur(p) {
-    const startStr = p.actualStart || p.actualStartDate || p.planFrom;
-    const endStr = p.actualEnd || p.actualCompletionDate || p.planTo;
+  // ── فهرس التواريخ الفعلية من السجل الزمني (نفس منطق التقرير الشهري) ──
+  // يبني Map<projectKey → {actualStart, actualEnd}> بمسح كل لقطة من الأقدم للأحدث
+  // actualStart = أول لقطة يصبح فيها المشروع "جاري"
+  // actualEnd   = أول لقطة يصبح فيها المشروع "منجز/مكتمل"
+  function _buildActualDateIndex(db) {
+    const sortedTL = [...(db.timeline||[])].sort((a,b)=>a.date.localeCompare(b.date));
+    const idx = new Map();
+    sortedTL.forEach(snap => {
+      (snap.projects||[]).forEach(prj => {
+        const k = prj.projectNumber || prj.projectName;
+        if (!k) return;
+        if (!idx.has(k)) idx.set(k, {actualStart:null, actualEnd:null});
+        const entry = idx.get(k);
+        // تاريخ الحالة المخزون في السجل يُفضّل على تاريخ اللقطة
+        const sd = (prj.statusDate && String(prj.statusDate).trim() !== '')
+          ? String(prj.statusDate).slice(0,10) : snap.date;
+        if (!entry.actualStart && _isInProgress(prj)) entry.actualStart = sd;
+        if (!entry.actualEnd   && _isCompleted(prj))  entry.actualEnd   = sd;
+      });
+    });
+    return idx;
+  }
+
+  // تحسب المدة الفعلية من الفهرس الزمني أولاً، ثم تعود للتواريخ المخططة احتياطاً
+  function _calcActualDur(p, dateIdx) {
+    const k = p.projectNumber || p.projectName;
+    const dates = (dateIdx && k) ? dateIdx.get(k) : null;
+    const startStr = (dates && dates.actualStart) || p.planFrom;
+    const endStr   = (dates && dates.actualEnd)   || p.planTo;
     if (!startStr||!endStr) return 0;
     const a=new Date(startStr), b=new Date(endStr);
     if (isNaN(a)||isNaN(b)||b<=a) return 0;
@@ -29064,13 +29090,13 @@ const CapacityScheduler = (function() {
   }
   function _defaultDur(sz) { return {S:60,M:120,L:240,XL:420}[sz]||120; }
 
-  function _buildCostModel(completedProjects) {
+  function _buildCostModel(completedProjects, dateIdx) {
     const points = completedProjects
       .filter(p => !(p.executingEntity||'').includes('الإدارة الفنية'))
       .map(p => {
         const cost = _getCost(p);
-        const dur = _calcActualDur(p) || _calcDur(p);
-        return { cost, dur };
+        const dur = _calcActualDur(p, dateIdx) || _calcDur(p);
+        return { cost, dur, name: p.projectName };
       })
       .filter(pt => pt.cost > 10000 && pt.dur >= 14 && pt.dur <= 3000);
     if (points.length < 3) return null;
@@ -29094,7 +29120,7 @@ const CapacityScheduler = (function() {
     const predicted = Math.round(model.a * cost + model.b);
     return Math.max(14, predicted);
   }
-  function _analyzeParallelFromHistory(db, branch, cutoff) {
+  function _analyzeParallelFromHistory(db, branch, cutoff, dateIdx) {
     if (!db||!db.timeline||db.timeline.length<2) return null;
     const uniqMap = new Map();
     db.timeline.forEach(snap=>{
@@ -29109,8 +29135,11 @@ const CapacityScheduler = (function() {
     const projs=[...uniqMap.values()].filter(_isCompleted);
     if (projs.length<2) return null;
     const windows=projs.map(p=>{
-      const s=new Date(p.actualStart||p.actualStartDate||p.planFrom);
-      const e=new Date(p.actualEnd||p.actualCompletionDate||p.planTo);
+      const k=p.projectNumber||p.projectName;
+      const dates=(dateIdx&&k)?dateIdx.get(k):null;
+      // استخدم التواريخ الفعلية من الفهرس أولاً، ثم التواريخ المخططة احتياطاً
+      const s=new Date((dates&&dates.actualStart)||p.planFrom);
+      const e=new Date((dates&&dates.actualEnd)||p.planTo);
       return {s,e};
     }).filter(w=>!isNaN(w.s)&&!isNaN(w.e)&&w.e>w.s);
     if (windows.length<2) return null;
@@ -29181,7 +29210,10 @@ const CapacityScheduler = (function() {
     const completed=[...uniqMap.values()];
     const actualMonths=monthsBack===999?12:monthsBack;
 
-    _costModel = _buildCostModel(completed);
+    // بناء فهرس التواريخ الفعلية من كامل السجل الزمني (مرة واحدة لكل الدوال)
+    const _dateIdx = _buildActualDateIndex(db);
+
+    _costModel = _buildCostModel(completed, _dateIdx);
     _renderCostModel(_costModel);
 
     const branchData={};
@@ -29190,7 +29222,7 @@ const CapacityScheduler = (function() {
       if (branchF&&b!==branchF) return;
       if (!branchData[b]) branchData[b]={comp:[],dur:{S:[],M:[],L:[],XL:[]},actualDurs:[]};
       branchData[b].comp.push(p);
-      const actualDur=_calcActualDur(p);
+      const actualDur=_calcActualDur(p, _dateIdx);
       const planDur=_calcDur(p);
       const dur=actualDur>0?actualDur:(planDur>0?planDur:0);
       const sz=_classifySize(p);
@@ -29216,7 +29248,7 @@ const CapacityScheduler = (function() {
       const ongoingAll=_getProjects().filter(p=>(p.executingEntity||'غير محدد')===b&&_isInProgress(p)&&(_typeConfig[p.projectType]||'branch')!=='exclude');
       const highProg=ongoingAll.filter(p=>_getTotalProgress(p)>=80);
       const load=ongoing.reduce((s,p)=>s+SIZE_W[_classifySize(p)],0);
-      const histParallel=_analyzeParallelFromHistory(db,b,cutoff);
+      const histParallel=_analyzeParallelFromHistory(db,b,cutoff,_dateIdx);
       cap[b]={monthlyUnits:monthly,avgDur,ongoingCount:ongoing.length,ongoingAll:ongoingAll.length,highProgCount:highProg.length,ongoingLoad:load,available:Math.max(0,monthly-load),completedCount:d.comp.length,_estimated:!d.comp.length,histParallel,_costModel};
     });
     _cap=cap;
