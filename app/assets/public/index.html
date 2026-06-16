@@ -18475,17 +18475,43 @@ document.addEventListener('DOMContentLoaded', async function() {
 ══════════════════════════════════════════════════ */
 const Notifications = (function() {
     let _open = false;
+    let _tlIndexCache = null;   // فهرس مسبق: projectNumber → [{date, p}]
+    let _tlIndexDate = null;    // تاريخ آخر لقطة عند بناء الفهرس
 
     function _timeline() {
         return [...(projectsDatabase.timeline||[])].sort((a,b)=>new Date(a.date)-new Date(b.date));
     }
 
-    function _firstDateWhenContinuous(projectNumber, condFn) {
+    // بناء فهرس projectNumber → [{date, p}] مرتبة تنازلياً
+    // يُعاد البناء فقط إذا تغيّرت البيانات (لقطة جديدة)
+    function _buildIndex() {
         const tl = _timeline();
+        if (!tl.length) return new Map();
+        const lastDate = tl[tl.length-1].date;
+        if (_tlIndexCache && _tlIndexDate === lastDate) return _tlIndexCache;
+        const idx = new Map();
+        tl.forEach(snap => {
+            (snap.projects||[]).forEach(p => {
+                if (!p.projectNumber) return;
+                if (!idx.has(p.projectNumber)) idx.set(p.projectNumber, []);
+                idx.get(p.projectNumber).push({date: snap.date, p});
+            });
+        });
+        // ترتيب تنازلي بالتاريخ لكل مشروع
+        idx.forEach(arr => arr.sort((a,b) => b.date.localeCompare(a.date)));
+        _tlIndexCache = idx;
+        _tlIndexDate = lastDate;
+        return idx;
+    }
+
+    // O(M) بدلاً من O(M×N) — يستخدم الفهرس
+    function _firstDateWhenContinuous(projectNumber, condFn) {
+        const idx = _buildIndex();
+        const entries = idx.get(projectNumber);
+        if (!entries || !entries.length) return null;
         let firstDate = null;
-        for (let i = tl.length-1; i >= 0; i--) {
-            const p = tl[i].projects?.find(pp=>pp.projectNumber===projectNumber);
-            if (p && condFn(p)) { firstDate = tl[i].date; }
+        for (const {date, p} of entries) {
+            if (condFn(p)) { firstDate = date; }
             else if (firstDate) break;
         }
         return firstDate;
@@ -18643,7 +18669,20 @@ const Notifications = (function() {
                     panel.classList.remove('open'); _open=false;
                 }
             });
-            setTimeout(()=>{ try{ const g=compute(''); let t=0; g.forEach(x=>t+=x.items.length); const b=document.getElementById('notif-badge'); if(b){b.textContent=t;b.style.display=t>0?'':'none';} }catch(e){} }, 2000);
+            // حساب الشارة في وقت خمول المتصفح — لا يعيق الـ UI أبداً
+            const _updateBadge = () => {
+                try {
+                    const g = compute('');
+                    let t = 0; g.forEach(x => t += x.items.length);
+                    const b = document.getElementById('notif-badge');
+                    if (b) { b.textContent = t; b.style.display = t > 0 ? '' : 'none'; }
+                } catch(e) {}
+            };
+            if (typeof requestIdleCallback !== 'undefined') {
+                requestIdleCallback(_updateBadge, { timeout: 20000 });
+            } else {
+                setTimeout(_updateBadge, 5000);
+            }
         },
         toggle() {
             const panel=document.getElementById('notif-panel');
