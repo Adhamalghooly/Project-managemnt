@@ -2958,13 +2958,20 @@ tbody tr:hover {
       .notif-close-btn{background:transparent;border:none;cursor:pointer;font-size:.9rem;color:var(--text-secondary,#64748b);padding:4px 6px;border-radius:6px}
       .notif-close-btn:hover{background:rgba(0,0,0,.06)}
       .notif-section{padding:10px 14px 4px}
-      .notif-section-title{font-size:.72rem;font-weight:800;letter-spacing:.04em;margin-bottom:8px;padding:4px 8px;border-radius:6px;display:inline-block}
+      .notif-section-header{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:8px}
+      .notif-section-title{font-size:.72rem;font-weight:800;letter-spacing:.04em;padding:4px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;flex:1}
+      .notif-count-badge{color:#fff;font-size:.65rem;font-weight:900;padding:1px 6px;border-radius:20px;line-height:1.5;white-space:nowrap}
+      .notif-print-btn{background:transparent;border:1.5px solid;border-radius:7px;cursor:pointer;font-size:.82rem;padding:2px 7px;flex-shrink:0;transition:background .15s;line-height:1.6}
+      .notif-print-btn:hover{background:rgba(0,0,0,.06)}
       .notif-item{background:var(--bg-secondary,#f8fafc);border-radius:10px;padding:10px 12px;margin-bottom:7px;border-right:3px solid}
       .notif-item-name{font-weight:700;font-size:.83rem;color:var(--text-primary,#1e293b);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .notif-item-meta{display:flex;justify-content:space-between;align-items:center;gap:6px}
       .notif-item-branch{font-size:.73rem;color:var(--text-secondary,#64748b)}
       .notif-item-days{font-weight:800;font-size:.75rem}
       .notif-empty{text-align:center;padding:14px;color:#94a3b8;font-size:.82rem;font-style:italic}
+      .notif-rest-wrap{display:none}
+      .notif-expand-btn{width:100%;background:transparent;border:1.5px dashed;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.75rem;font-weight:700;padding:5px 10px;margin:2px 0 10px;transition:background .15s}
+      .notif-expand-btn:hover{background:rgba(0,0,0,.05)}
       .notif-refresh-bar{padding:8px 14px;border-top:1px solid var(--gray-light,#e2e8f0);text-align:center}
     </style>
 </head>
@@ -18183,7 +18190,7 @@ const Notifications = (function() {
                 const s=(pp.status||'').trim(),u=(pp.subStatus||'').trim();
                 return (s==='منجز'||s==='مكتمل')&&(u.includes('فحص أولي')||u.includes('فحص اولي'));
             }))}))
-            .sort((a,b)=>b.days-a.days).slice(0,3);
+            .sort((a,b)=>b.days-a.days);
         groups.push({title:'🔍 منجز — فحص أولي (الأطول مدة)',color:'#0e7490',items:preAudit,lbl:'يوم في الفحص الأولي'});
 
         // 2. جارية متوقفة — الأطول توقفاً
@@ -18196,7 +18203,7 @@ const Notifications = (function() {
             .map(p=>({...p, days:_daysSince(_firstDateWhenContinuous(p.projectNumber, pp=>
                 pp.civilProgress===p.civilProgress&&pp.technicalProgress===p.technicalProgress&&pp.status===p.status
             ))}))
-            .sort((a,b)=>b.days-a.days).slice(0,3);
+            .sort((a,b)=>b.days-a.days);
         groups.push({title:'⛔ جارية متوقفة (الأطول توقفاً)',color:'#dc2626',items:stalled,lbl:'يوم متوقف'});
 
         // 3. قرب الإنجاز — الأطول انتظاراً
@@ -18209,7 +18216,7 @@ const Notifications = (function() {
                 const st=pp.status||'';
                 return st.includes('جاري')&&!st.includes('جاري الاقفال')&&!st.includes('جاري التسليم')&&_isNear(pp);
             }))}))
-            .sort((a,b)=>b.days-a.days).slice(0,3);
+            .sort((a,b)=>b.days-a.days);
         groups.push({title:'🏁 قرب الإنجاز (الأطول انتظاراً)',color:'#10b981',items:nearing,lbl:'يوم قرب الإنجاز'});
 
         // 4. VIP لم تبدأ — الأطول مدة
@@ -18222,7 +18229,7 @@ const Notifications = (function() {
                 const st=pp.status||'', tp=(pp.projectType||'').toLowerCase();
                 return (st.includes('لم يبدأ')||st.includes('لم يبداء'))&&(tp.includes('vip')||(pp.projectName||'').toLowerCase().includes('vip'));
             }))}))
-            .sort((a,b)=>b.days-a.days).slice(0,3);
+            .sort((a,b)=>b.days-a.days);
         groups.push({title:'⭐ VIP لم تبدأ (الأطول مدة)',color:'#f59e0b',items:vipNS,lbl:'يوم لم تبدأ'});
 
         return groups;
@@ -18238,10 +18245,13 @@ const Notifications = (function() {
         </div>`;
     }
 
+    let _cachedGroups = [];
+
     function _render() {
         const filter = document.getElementById('notif-branch-filter')?.value||'';
         let groups;
         try { groups = compute(filter); } catch(e) { groups = []; }
+        _cachedGroups = groups;
 
         let total = 0; groups.forEach(g=>total+=g.items.length);
         const badge = document.getElementById('notif-badge');
@@ -18250,11 +18260,36 @@ const Notifications = (function() {
         const content = document.getElementById('notif-content');
         if (!content) return;
         if (!groups.length || !total) { content.innerHTML='<div class="notif-empty">لا توجد بيانات متاحة</div>'; return; }
-        content.innerHTML = groups.map(g=>`
+
+        const PREVIEW = 3;
+        content.innerHTML = groups.map((g, gi) => {
+            const preview = g.items.slice(0, PREVIEW);
+            const rest    = g.items.slice(PREVIEW);
+            const hasMore = rest.length > 0;
+            return `
             <div class="notif-section">
-                <div class="notif-section-title" style="color:${g.color};background:${g.color}15">${g.title}</div>
-                ${g.items.length ? g.items.map(it=>_renderItem(it,g.color,g.lbl)).join('') : '<div class="notif-empty">لا توجد مشاريع</div>'}
-            </div>`).join('');
+                <div class="notif-section-header">
+                    <div class="notif-section-title" style="color:${g.color};background:${g.color}15">
+                        ${g.title}
+                        <span class="notif-count-badge" style="background:${g.color}">${g.items.length}</span>
+                    </div>
+                    <button class="notif-print-btn" onclick="Notifications.printGroup(${gi})" title="طباعة الفئة" style="border-color:${g.color};color:${g.color}">🖨️</button>
+                </div>
+                ${g.items.length ? `
+                    <div>${preview.map(it=>_renderItem(it,g.color,g.lbl)).join('')}</div>
+                    ${hasMore ? `
+                        <div class="notif-rest-wrap" id="notif-rest-${gi}" style="display:none">
+                            ${rest.map(it=>_renderItem(it,g.color,g.lbl)).join('')}
+                        </div>
+                        <button class="notif-expand-btn" id="notif-exp-${gi}"
+                            onclick="Notifications.toggleGroup(${gi},this)"
+                            style="border-color:${g.color};color:${g.color}">
+                            ▼ عرض المزيد (${rest.length} مشروع إضافي)
+                        </button>
+                    ` : ''}
+                ` : '<div class="notif-empty">لا توجد مشاريع</div>'}
+            </div>`;
+        }).join('');
     }
 
     function _populateBranches() {
@@ -18278,7 +18313,6 @@ const Notifications = (function() {
                     panel.classList.remove('open'); _open=false;
                 }
             });
-            // تحديث الشارة عند تحميل البيانات
             setTimeout(()=>{ try{ const g=compute(''); let t=0; g.forEach(x=>t+=x.items.length); const b=document.getElementById('notif-badge'); if(b){b.textContent=t;b.style.display=t>0?'':'none';} }catch(e){} }, 2000);
         },
         toggle() {
@@ -18289,7 +18323,64 @@ const Notifications = (function() {
             if (_open) { _populateBranches(); _render(); }
         },
         close() { const p=document.getElementById('notif-panel'); if(p)p.classList.remove('open'); _open=false; },
-        refresh() { if(_open){_populateBranches();_render();} }
+        refresh() { if(_open){_populateBranches();_render();} },
+        toggleGroup(gi, btn) {
+            const wrap = document.getElementById('notif-rest-'+gi);
+            if (!wrap) return;
+            const isOpen = wrap.style.display !== 'none';
+            wrap.style.display = isOpen ? 'none' : 'block';
+            const g = _cachedGroups[gi];
+            const extra = g ? g.items.length - 3 : 0;
+            if (btn) btn.innerHTML = isOpen
+                ? `▼ عرض المزيد (${extra} مشروع إضافي)`
+                : `▲ إخفاء`;
+        },
+        printGroup(gi) {
+            const g = _cachedGroups[gi];
+            if (!g || !g.items.length) return;
+            const rows = g.items.map((item, i) => `
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${item.projectNumber||'—'}</td>
+                    <td style="text-align:right;max-width:240px">${item.projectName||'—'}</td>
+                    <td>${item.executingEntity||'—'}</td>
+                    <td>${item.projectType||'—'}</td>
+                    <td>${item.status||'—'}</td>
+                    <td style="color:${g.color};font-weight:700">${item.days} ${g.lbl}</td>
+                </tr>`).join('');
+            const today = new Date().toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'});
+            const html = `<!DOCTYPE html><html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><title>${g.title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Cairo,sans-serif;direction:rtl;padding:20px 24px 40px;background:#fff;color:#1e293b}
+.ph{background:${g.color};color:#fff;padding:18px 22px;border-radius:10px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ph h1{font-size:1.15rem;font-weight:900}
+.ph p{font-size:.8rem;opacity:.9}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead th{background:${g.color};color:#fff;padding:8px 10px;text-align:center;font-weight:700;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:center;vertical-align:middle}
+tr:nth-child(even) td{background:#f8fafc}
+tr:hover td{background:#eff6ff}
+.footer{margin-top:18px;text-align:center;font-size:.72rem;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}
+@media print{@page{size:A4 portrait;margin:12mm}body{padding:0}.no-print{display:none!important}}
+</style></head><body>
+<div class="ph">
+    <div><h1>${g.title}</h1><p>إجمالي المشاريع: ${g.items.length} مشروع</p></div>
+    <div style="font-size:.82rem;opacity:.9">${today}</div>
+</div>
+<table>
+    <thead><tr><th>#</th><th>رقم المشروع</th><th>اسم المشروع</th><th>الجهة المنفذة</th><th>النوع</th><th>الحالة</th><th>${g.lbl}</th></tr></thead>
+    <tbody>${rows}</tbody>
+</table>
+<div class="footer">نظام تحليل بيانات المشاريع — ${today}</div>
+<script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script>
+</body></html>`;
+            const w = window.open('','_blank');
+            if (!w) { alert('يرجى السماح بالنوافذ المنبثقة.'); return; }
+            w.document.write(html); w.document.close();
+        }
     };
 })();
 
