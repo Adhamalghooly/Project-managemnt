@@ -21651,236 +21651,422 @@ function _saveSkillsDB() {
 _loadSkillsDB();
 
 /* ═══════════════════════════════════════════════════════════════
-   📊 محرك الجدولة التاريخي — HistoricalSchedulingEngine
-   يستخدم بيانات المشاريع المنجزة لبناء نماذج إحصائية وتنبؤية
+   📊 محرك التنبؤ التاريخي الذكي — HistoricalSchedulingEngine v2
+   نماذج مستقلة لكل نوع: خطي، لوغاريتمي، قوي، أسي، متعدد الحدود
+   كشف تلقائي للشواذ (IQR + Z-Score) | شرائح تكلفة | محرك تشابه
    ═══════════════════════════════════════════════════════════════ */
 const HistoricalSchedulingEngine = (function() {
-    function _cleanCost(val) {
-        if (!val) return 0;
-        if (typeof val === 'number') return val;
-        let str = String(val);
-        ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'].forEach((a, i) => {
-            str = str.replace(new RegExp(a, 'g'), String(i));
-        });
-        return parseFloat(str.replace(/[^\d.]/g, '')) || 0;
+    'use strict';
+
+    // ① الإعدادات المركزية
+    const CFG = {
+        minDuration:        14,
+        maxDuration:        3000,
+        minSampleReg:       5,
+        minSampleSegment:   12,
+        minSampleSimilarity:2,
+        iqrMultiplier:      1.5,
+        zThreshold:         2.5,
+        costNorm:           1e6,
+        cacheValidMs:       5 * 60 * 1000,
+        similarityTopK:     6,
+        blendThreshold:     0.35,
+        blendWeight:        0.25,
+        excludeEntities:    ['الإدارة الفنية'],
+        excludeStatusParts: ['متوقف','ملغي','ملغى','متنازع','نزاع','موقوف','معلق','مجمد'],
+    };
+
+    let _cache = null, _cacheTs = 0;
+
+    // ② أدوات البيانات
+    function _cleanCost(v) {
+        if (!v) return 0;
+        if (typeof v === 'number') return v;
+        let s = String(v);
+        '٠١٢٣٤٥٦٧٨٩'.split('').forEach((a, i) => { s = s.replace(new RegExp(a, 'g'), String(i)); });
+        return parseFloat(s.replace(/[^\d.]/g, '')) || 0;
     }
     function _isCompleted(p) {
         const s = p.status || '';
         return ['منجز','مكتمل','مسلم','مقفل','جاري الاقفال','جاري الإقفال'].some(k => s.includes(k));
     }
-    function _isTechAdmin(p) {
-        return (p.executingEntity || '').includes('الإدارة الفنية');
+    function _isAbnormal(p) {
+        if (CFG.excludeEntities.some(e => (p.executingEntity || '').includes(e))) return true;
+        const combined = (p.status || '') + (p.subStatus || '') + (p.notes || '');
+        return CFG.excludeStatusParts.some(kw => combined.includes(kw));
     }
     function _buildDateIndex(db) {
-        const sortedTL = [...(db.timeline || [])].sort((a, b) => a.date.localeCompare(b.date));
+        const tl = [...(db.timeline || [])].sort((a, b) => a.date.localeCompare(b.date));
         const idx = new Map();
-        sortedTL.forEach(snap => {
+        tl.forEach(snap => {
             (snap.projects || []).forEach(prj => {
                 const k = prj.projectNumber || prj.projectName;
                 if (!k) return;
-                if (!idx.has(k)) idx.set(k, { actualStart: null, actualEnd: null });
-                const entry = idx.get(k);
-                const sd = (prj.statusDate && String(prj.statusDate).trim())
-                    ? String(prj.statusDate).slice(0, 10) : snap.date;
-                const s = prj.status || '';
-                const isActive = s.includes('جاري') && !['الاقفال','الإقفال'].some(kw => s.includes(kw));
-                const isDone = ['منجز','مكتمل','مسلم','مقفل'].some(kw => s.includes(kw));
-                if (!entry.actualStart && isActive) entry.actualStart = sd;
-                if (!entry.actualEnd   && isDone)   entry.actualEnd   = sd;
+                if (!idx.has(k)) idx.set(k, { start: null, end: null });
+                const e  = idx.get(k);
+                const sd = (String(prj.statusDate || '').trim() || snap.date).slice(0, 10);
+                const s  = prj.status || '';
+                const active = s.includes('جاري') && !['الاقفال','الإقفال'].some(kw => s.includes(kw));
+                const done   = ['منجز','مكتمل','مسلم','مقفل'].some(kw => s.includes(kw));
+                if (!e.start && active) e.start = sd;
+                if (!e.end   && done)   e.end   = sd;
             });
         });
         return idx;
     }
-    function _calcActualDuration(p, dateIdx) {
+    function _actualDur(p, idx) {
         const k = p.projectNumber || p.projectName;
-        const dates = (dateIdx && k) ? dateIdx.get(k) : null;
-        const startStr = (dates && dates.actualStart) || p.planFrom;
-        const endStr   = (dates && dates.actualEnd)   || p.planTo;
-        if (!startStr || !endStr) return 0;
-        const a = new Date(startStr), b = new Date(endStr);
-        if (isNaN(a) || isNaN(b) || b <= a) return 0;
-        return Math.round((b - a) / 86400000);
+        const e = (idx && k) ? idx.get(k) : null;
+        const s = (e && e.start) || p.planFrom;
+        const f = (e && e.end)   || p.planTo;
+        if (!s || !f) return 0;
+        const d = Math.round((new Date(f) - new Date(s)) / 86400000);
+        return (d >= CFG.minDuration && d <= CFG.maxDuration) ? d : 0;
     }
-    function _getCompletedProjects(db) {
+    function _getCompleted(db) {
         if (!db || !db.timeline || !db.timeline.length) return [];
         const dateIdx = _buildDateIndex(db);
-        const uniqMap = new Map();
+        const seen = new Map();
         db.timeline.forEach(snap => {
             (snap.projects || []).forEach(p => {
-                if (!_isCompleted(p) || _isTechAdmin(p)) return;
+                if (!_isCompleted(p) || _isAbnormal(p)) return;
                 const k = p.projectNumber || p.projectName;
                 if (!k) return;
-                if (!uniqMap.has(k) || uniqMap.get(k)._sd < snap.date)
-                    uniqMap.set(k, { ...p, _sd: snap.date });
+                if (!seen.has(k) || seen.get(k)._snap < snap.date)
+                    seen.set(k, { ...p, _snap: snap.date });
             });
         });
-        return [...uniqMap.values()].map(p => {
-            const dur = _calcActualDuration(p, dateIdx);
-            const cost = _cleanCost(p.contractValue || p.cost);
-            return { ...p, _actualDur: dur, _cost: cost };
-        }).filter(p => p._actualDur >= 14 && p._actualDur <= 3000);
-    }
-    function _stats(values) {
-        if (!values.length) return { mean: 0, median: 0, stddev: 0, q1: 0, q3: 0, n: 0 };
-        const sorted = [...values].sort((a, b) => a - b);
-        const n = sorted.length;
-        const q1 = sorted[Math.floor(n * 0.25)];
-        const q3 = sorted[Math.floor(n * 0.75)];
-        const iqr = q3 - q1;
-        const filtered = sorted.filter(v => v >= q1 - 1.5 * iqr && v <= q3 + 1.5 * iqr);
-        const mean = filtered.reduce((s, v) => s + v, 0) / (filtered.length || 1);
-        const mid = Math.floor(n / 2);
-        const median = n % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-        const variance = filtered.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / (filtered.length || 1);
-        const stddev = Math.sqrt(variance);
-        return { mean: Math.round(mean), median: Math.round(median), stddev: Math.round(stddev), q1, q3, iqr, n, rawN: values.length };
-    }
-    function _linearRegression(points) {
-        const n = points.length;
-        if (n < 3) return null;
-        const sumX  = points.reduce((s, p) => s + p.x, 0);
-        const sumY  = points.reduce((s, p) => s + p.y, 0);
-        const sumXY = points.reduce((s, p) => s + p.x * p.y, 0);
-        const sumX2 = points.reduce((s, p) => s + p.x * p.x, 0);
-        const denom = n * sumX2 - sumX * sumX;
-        if (Math.abs(denom) < 1e-9) return null;
-        const a = (n * sumXY - sumX * sumY) / denom;
-        const b = (sumY - a * sumX) / n;
-        const meanY = sumY / n;
-        const ssTot = points.reduce((s, p) => s + Math.pow(p.y - meanY, 2), 0);
-        const ssRes = points.reduce((s, p) => s + Math.pow(p.y - (a * p.x + b), 2), 0);
-        const r2 = ssTot > 0 ? Math.max(0, 1 - ssRes / ssTot) : 0;
-        return { a, b, r2, n, meanY: Math.round(meanY) };
-    }
-    function _calcAccuracyMetrics(predicted, actual) {
-        const n = predicted.length;
-        if (!n) return null;
-        const mae  = predicted.reduce((s, p, i) => s + Math.abs(p - actual[i]), 0) / n;
-        const rmse = Math.sqrt(predicted.reduce((s, p, i) => s + Math.pow(p - actual[i], 2), 0) / n);
-        let mapeSum = 0, mapeN = 0;
-        predicted.forEach((p, i) => { if (actual[i] > 0) { mapeSum += Math.abs(p - actual[i]) / actual[i]; mapeN++; } });
-        const mape = mapeN > 0 ? (mapeSum / mapeN) * 100 : 0;
-        return { mae: Math.round(mae), rmse: Math.round(rmse), mape: Math.round(mape * 10) / 10, n };
+        return [...seen.values()].map(p => ({
+            ...p,
+            _dur:    _actualDur(p, dateIdx),
+            _cost:   _cleanCost(p.contractValue || p.cost),
+            _type:   (p.projectType || 'غير محدد').trim(),
+            _branch: p.executingEntity || 'غير محدد',
+        })).filter(p => p._dur > 0);
     }
 
-    function buildModel() {
-        const db = (typeof projectsDatabase !== 'undefined') ? projectsDatabase : null;
+    // ③ الإحصاء وكشف الشواذ
+    function _stats(values) {
+        if (!values.length) return { mean:0, median:0, stddev:0, min:0, max:0, q1:0, q3:0, n:0 };
+        const s   = [...values].sort((a, b) => a - b);
+        const n   = s.length;
+        const mid = Math.floor(n / 2);
+        const median = n % 2 === 0 ? (s[mid-1] + s[mid]) / 2 : s[mid];
+        const mean   = s.reduce((a, b) => a + b, 0) / n;
+        const stddev = Math.sqrt(s.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
+        return { mean: Math.round(mean), median: Math.round(median), stddev: Math.round(stddev),
+                 min: s[0], max: s[n-1], q1: s[Math.floor(n*0.25)], q3: s[Math.floor(n*0.75)], n };
+    }
+    function _removeOutliers(projects) {
+        if (projects.length < 6) return { cleanProjs: projects, removedCount: 0 };
+        const durs = projects.map(p => p._dur);
+        const st   = _stats(durs);
+        const iqr  = st.q3 - st.q1;
+        const lo   = st.q1 - CFG.iqrMultiplier * iqr;
+        const hi   = st.q3 + CFG.iqrMultiplier * iqr;
+        const clean = [], removed = [];
+        projects.forEach(p => {
+            const z = st.stddev > 0 ? Math.abs(p._dur - st.mean) / st.stddev : 0;
+            (p._dur < lo || p._dur > hi || z > CFG.zThreshold) ? removed.push(p) : clean.push(p);
+        });
+        return clean.length >= 3 ? { cleanProjs: clean, removedCount: removed.length }
+                                 : { cleanProjs: projects, removedCount: 0 };
+    }
+
+    // ④ نماذج الانحدار
+    function _gaussElim(mat) {
+        const n = mat.length;
+        const m = mat.map(r => [...r]);
+        for (let c = 0; c < n; c++) {
+            let mx = c;
+            for (let r = c+1; r < n; r++) if (Math.abs(m[r][c]) > Math.abs(m[mx][c])) mx = r;
+            [m[c], m[mx]] = [m[mx], m[c]];
+            if (Math.abs(m[c][c]) < 1e-14) return null;
+            for (let r = 0; r < n; r++) {
+                if (r === c) continue;
+                const f = m[r][c] / m[c][c];
+                for (let j = c; j <= n; j++) m[r][j] -= f * m[c][j];
+            }
+        }
+        return m.map((r, i) => r[n] / r[i]);
+    }
+    function _evalModel(fn, pts) {
+        if (!pts.length) return { mae:Infinity, rmse:Infinity, mape:Infinity, r2:-1 };
+        const meanY = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+        let ssTot=0, ssRes=0, maeS=0, rmseS=0, mapeS=0, mapeN=0;
+        pts.forEach(p => {
+            const pr = Math.max(CFG.minDuration, Math.min(CFG.maxDuration, fn(p.x)));
+            maeS += Math.abs(pr - p.y); rmseS += (pr - p.y)**2;
+            if (p.y > 0) { mapeS += Math.abs(pr - p.y) / p.y; mapeN++; }
+            ssTot += (p.y - meanY)**2; ssRes += (pr - p.y)**2;
+        });
+        const n = pts.length;
+        return { mae: Math.round(maeS/n), rmse: Math.round(Math.sqrt(rmseS/n)),
+                 mape: mapeN ? Math.round(mapeS/mapeN*1000)/10 : Infinity,
+                 r2: ssTot > 0 ? Math.round((1-ssRes/ssTot)*1000)/1000 : 0 };
+    }
+    function _fitLinear(pts) {
+        const n=pts.length; if (n<2) return null;
+        const sx=pts.reduce((s,p)=>s+p.x,0), sy=pts.reduce((s,p)=>s+p.y,0);
+        const sxy=pts.reduce((s,p)=>s+p.x*p.y,0), sx2=pts.reduce((s,p)=>s+p.x*p.x,0);
+        const d=n*sx2-sx*sx; if (Math.abs(d)<1e-14) return null;
+        const a=(n*sxy-sx*sy)/d, b=(sy-a*sx)/n;
+        return { modelType:'linear', fn: x=>a*x+b, params:{a,b}, label:`${a.toFixed(4)}·C+${Math.round(b)}` };
+    }
+    function _fitPoly2(pts) {
+        if (pts.length<5) return null;
+        const s={n:pts.length,x:0,x2:0,x3:0,x4:0,y:0,xy:0,x2y:0};
+        pts.forEach(p=>{s.x+=p.x;s.x2+=p.x**2;s.x3+=p.x**3;s.x4+=p.x**4;s.y+=p.y;s.xy+=p.x*p.y;s.x2y+=p.x**2*p.y;});
+        const c=_gaussElim([[s.x4,s.x3,s.x2,s.x2y],[s.x3,s.x2,s.x,s.xy],[s.x2,s.x,s.n,s.y]]);
+        if (!c) return null;
+        const [a,b,cv]=c;
+        return { modelType:'poly2', fn: x=>a*x**2+b*x+cv, params:{a,b,c:cv}, label:'poly2' };
+    }
+    function _fitLogarithmic(pts) {
+        const v=pts.filter(p=>p.x>0); if (v.length<3) return null;
+        const r=_fitLinear(v.map(p=>({x:Math.log(p.x),y:p.y}))); if (!r) return null;
+        const {a,b}=r.params;
+        return { modelType:'log', fn: x=>a*Math.log(Math.max(x,1e-9))+b, params:{a,b}, label:`${a.toFixed(2)}·ln(C)+${Math.round(b)}` };
+    }
+    function _fitPower(pts) {
+        const v=pts.filter(p=>p.x>0&&p.y>0); if (v.length<3) return null;
+        const r=_fitLinear(v.map(p=>({x:Math.log(p.x),y:Math.log(p.y)}))); if (!r) return null;
+        const a=Math.exp(r.params.b), b=r.params.a;
+        return { modelType:'power', fn: x=>a*Math.pow(Math.max(x,1e-9),b), params:{a,b}, label:`${a.toFixed(2)}·C^${b.toFixed(4)}` };
+    }
+    function _fitExponential(pts) {
+        const v=pts.filter(p=>p.y>0); if (v.length<3) return null;
+        const r=_fitLinear(v.map(p=>({x:p.x,y:Math.log(p.y)}))); if (!r) return null;
+        const a=Math.exp(r.params.b), b=r.params.a;
+        return { modelType:'exp', fn: x=>Math.min(a*Math.exp(b*x),CFG.maxDuration), params:{a,b}, label:`exp` };
+    }
+    function _selectBest(pts) {
+        if (pts.length < CFG.minSampleReg) return null;
+        const candidates = [_fitLinear(pts),_fitPoly2(pts),_fitLogarithmic(pts),_fitPower(pts),_fitExponential(pts)].filter(Boolean);
+        if (!candidates.length) return null;
+        candidates.forEach(m => { m.metrics = _evalModel(m.fn, pts); });
+        return candidates.reduce((best,m) => m.metrics.mape < best.metrics.mape ? m : best, candidates[0]);
+    }
+
+    // ⑤ تشريح التكلفة
+    function _fmtM(v) {
+        if (!v || v===Infinity) return '—';
+        if (v>=1e9) return (v/1e9).toFixed(1)+'م.ر.ي';
+        if (v>=1e6) return (v/1e6).toFixed(1)+'م';
+        if (v>=1e3) return Math.round(v/1e3)+'ألف';
+        return Math.round(v);
+    }
+    function _detectSegments(costProjs) {
+        if (costProjs.length < CFG.minSampleSegment) return null;
+        const costs = costProjs.map(p=>p._cost).filter(c=>c>0).sort((a,b)=>a-b);
+        const n=costs.length;
+        const q1=costs[Math.floor(n*0.25)], q2=costs[Math.floor(n*0.50)], q3=costs[Math.floor(n*0.75)];
+        return [
+            {label:'صغيرة',  min:0,  max:q1,      range:`0–${_fmtM(q1)}`},
+            {label:'متوسطة', min:q1, max:q2,      range:`${_fmtM(q1)}–${_fmtM(q2)}`},
+            {label:'كبيرة',  min:q2, max:q3,      range:`${_fmtM(q2)}–${_fmtM(q3)}`},
+            {label:'ضخمة',   min:q3, max:Infinity, range:`${_fmtM(q3)}+`},
+        ];
+    }
+
+    // ⑥ بناء نموذج نوع واحد
+    function _buildTypeModel(typeProjs) {
+        const {cleanProjs, removedCount} = _removeOutliers(typeProjs);
+        const st = _stats(cleanProjs.map(p=>p._dur));
+        const costProjs = cleanProjs.filter(p=>p._cost>10000);
+        const pts = costProjs.map(p=>({x:p._cost/CFG.costNorm, y:p._dur}));
+        const bestModel = _selectBest(pts);
+        let segments = null;
+        if (costProjs.length >= CFG.minSampleSegment) {
+            const segs = _detectSegments(costProjs);
+            if (segs) {
+                segments = segs.map(seg => {
+                    const sp  = costProjs.filter(p=>p._cost>=seg.min&&p._cost<seg.max);
+                    const spt = sp.map(p=>({x:p._cost/CFG.costNorm,y:p._dur}));
+                    return {...seg, n:sp.length, stats:_stats(sp.map(p=>p._dur)), model:_selectBest(spt)};
+                }).filter(s=>s.n>=2);
+            }
+        }
+        const sorted = [...cleanProjs].sort((a,b)=>(a._snap||'').localeCompare(b._snap||''));
+        const learnPts = sorted.map((p,i)=>({x:i,y:p._dur}));
+        let accuracy = null;
+        if (bestModel && pts.length>=3) {
+            const preds = pts.map(p=>Math.max(CFG.minDuration,bestModel.fn(p.x)));
+            accuracy = _calcAccuracy(preds, pts.map(p=>p.y));
+        }
+        return {
+            n: cleanProjs.length, outliersRemoved: removedCount, stats: st,
+            bestModel, segments,
+            learningSlope: learnPts.length>=4 ? _fitLinear(learnPts) : null,
+            accuracy,
+            confidence: cleanProjs.length>=10?'high':cleanProjs.length>=4?'medium':'low',
+        };
+    }
+
+    // ⑦ دقة التنبؤ
+    function _calcAccuracy(preds, acts) {
+        const n=preds.length; if (!n) return null;
+        const mae=preds.reduce((s,p,i)=>s+Math.abs(p-acts[i]),0)/n;
+        const rmse=Math.sqrt(preds.reduce((s,p,i)=>s+(p-acts[i])**2,0)/n);
+        let ms=0,mn=0; preds.forEach((p,i)=>{if(acts[i]>0){ms+=Math.abs(p-acts[i])/acts[i];mn++;}});
+        return {mae:Math.round(mae),rmse:Math.round(rmse),mape:mn?Math.round(ms/mn*1000)/10:null,n};
+    }
+
+    // ⑧ محرك التشابه
+    function _findSimilar(type, cost, branch, allCompleted, topK) {
+        const same = allCompleted.filter(p=>p._type===type);
+        if (same.length < CFG.minSampleSimilarity) return [];
+        const maxCost = Math.max(...same.map(p=>p._cost), 1);
+        return same.map(p=>({...p, _dist:Math.abs(p._cost-cost)/maxCost+(p._branch===branch?0:0.08)}))
+                   .sort((a,b)=>a._dist-b._dist).slice(0,topK);
+    }
+
+    // ⑨ بناء النموذج الكامل
+    function buildModel(force) {
+        const now = Date.now();
+        if (!force && _cache && (now-_cacheTs)<CFG.cacheValidMs) return _cache;
+        const db = typeof projectsDatabase!=='undefined' ? projectsDatabase : null;
         if (!db) return null;
-        const completed = _getCompletedProjects(db);
+        const completed = _getCompleted(db);
         if (!completed.length) return null;
 
-        const allDurs = completed.map(p => p._actualDur).filter(d => d > 0);
-        const globalStats = _stats(allDurs);
+        const globalStats = _stats(completed.map(p=>p._dur));
 
+        // نماذج مستقلة لكل نوع
         const byType = {};
-        completed.forEach(p => {
-            const t = (p.projectType || 'غير محدد').trim();
-            if (!byType[t]) byType[t] = [];
-            byType[t].push(p);
-        });
-        const typeStats = {};
-        Object.entries(byType).forEach(([t, projs]) => {
-            const durs = projs.map(p => p._actualDur).filter(d => d > 0);
-            const costProjs = projs.filter(p => p._cost > 10000 && p._actualDur > 0);
-            const st = _stats(durs);
-            const regression = costProjs.length >= 3
-                ? _linearRegression(costProjs.map(p => ({ x: p._cost, y: p._actualDur })))
-                : null;
-            const sorted = projs.filter(p => p._actualDur > 0)
-                .sort((a, b) => (a._sd || '').localeCompare(b._sd || ''));
-            const learningSlope = sorted.length >= 4
-                ? _linearRegression(sorted.map((p, i) => ({ x: i, y: p._actualDur })))
-                : null;
-            const confidence = durs.length >= 10 ? 'high' : durs.length >= 4 ? 'medium' : 'low';
-            typeStats[t] = { ...st, n: durs.length, regression, learningSlope, confidence };
-        });
+        completed.forEach(p=>{ if (!byType[p._type]) byType[p._type]=[]; byType[p._type].push(p); });
+        const typeModels = {};
+        Object.entries(byType).forEach(([t,projs])=>{ typeModels[t]=_buildTypeModel(projs); });
 
+        // إحصاء الفروع (BPI)
         const byBranch = {};
-        completed.forEach(p => {
-            const b = p.executingEntity || 'غير محدد';
-            if (!byBranch[b]) byBranch[b] = [];
-            byBranch[b].push(p);
-        });
+        completed.forEach(p=>{ if (!byBranch[p._branch]) byBranch[p._branch]=[]; byBranch[p._branch].push(p); });
         const branchStats = {};
-        Object.entries(byBranch).forEach(([b, projs]) => {
-            const durs = projs.map(p => p._actualDur).filter(d => d > 0);
-            const st = _stats(durs);
-            const sorted = projs.filter(p => p._actualDur > 0)
-                .sort((a, b) => (a._sd || '').localeCompare(b._sd || ''));
-            const learningSlope = sorted.length >= 4
-                ? _linearRegression(sorted.map((p, i) => ({ x: i, y: p._actualDur })))
-                : null;
-            const totalDays = durs.reduce((s, d) => s + d, 0);
-            const totalCost = projs.filter(p => p._cost > 0).reduce((s, p) => s + p._cost, 0);
-            const execSpeed = totalDays > 0 ? Math.round(totalCost / totalDays) : 0;
-            const bpi = globalStats.median > 0 && st.median > 0
-                ? Math.round((globalStats.median / st.median) * 100) / 100 : 1;
-            branchStats[b] = { ...st, n: durs.length, learningSlope, bpi, execSpeed };
+        Object.entries(byBranch).forEach(([b,projs])=>{
+            const st=_stats(projs.map(p=>p._dur));
+            const totC=projs.reduce((s,p)=>s+p._cost,0), totD=projs.reduce((s,p)=>s+p._dur,0);
+            const bpi=globalStats.median>0&&st.median>0?Math.round(globalStats.median/st.median*100)/100:1;
+            const sorted=[...projs].sort((a,b)=>(a._snap||'').localeCompare(b._snap||''));
+            branchStats[b]={...st, bpi, execSpeed:totD>0?Math.round(totC/totD):0,
+                learningSlope:sorted.length>=4?_fitLinear(sorted.map((p,i)=>({x:i,y:p._dur}))):null};
         });
 
-        const costPoints = completed.filter(p => p._cost > 10000 && p._actualDur > 0)
-            .map(p => ({ x: p._cost, y: p._actualDur }));
-        const globalRegression = costPoints.length >= 3 ? _linearRegression(costPoints) : null;
-
-        const predVsActual = completed.filter(p => p._cost > 10000 && p._actualDur > 0).map(p => {
-            const t = (p.projectType || 'غير محدد').trim();
-            const ts = typeStats[t];
-            let predicted = 0;
-            if (ts && ts.regression && ts.regression.r2 > 0.2 && p._cost > 10000)
-                predicted = Math.max(14, Math.round(ts.regression.a * p._cost + ts.regression.b));
-            else if (ts && ts.median > 0)
-                predicted = ts.median;
-            else if (globalRegression && globalRegression.r2 > 0.2)
-                predicted = Math.max(14, Math.round(globalRegression.a * p._cost + globalRegression.b));
-            else
-                predicted = globalStats.median;
-            return { predicted: Math.max(14, predicted), actual: p._actualDur };
-        });
-        const accuracy = predVsActual.length >= 3
-            ? _calcAccuracyMetrics(predVsActual.map(r => r.predicted), predVsActual.map(r => r.actual))
-            : null;
-
-        return { totalCompleted: completed.length, globalStats, typeStats, branchStats, globalRegression, accuracy, generatedAt: new Date().toISOString() };
-    }
-
-    function predictDurationByType(projectType, costValue) {
-        const db = (typeof projectsDatabase !== 'undefined') ? projectsDatabase : null;
-        if (!db || !db.timeline || !db.timeline.length) return 0;
-        const model = buildModel();
-        if (!model) return 0;
-        const type = (projectType || '').trim();
-        let ts = model.typeStats[type];
-        if (!ts) {
-            const matchKey = Object.keys(model.typeStats).find(k => k.includes(type) || type.includes(k));
-            if (matchKey) ts = model.typeStats[matchKey];
+        // نموذج شامل احتياطي
+        const allPts = completed.filter(p=>p._cost>10000).map(p=>({x:p._cost/CFG.costNorm,y:p._dur}));
+        const globalBestModel = _selectBest(allPts);
+        let globalAccuracy = null;
+        if (globalBestModel && allPts.length>=3) {
+            const preds=allPts.map(p=>Math.max(CFG.minDuration,globalBestModel.fn(p.x)));
+            globalAccuracy=_calcAccuracy(preds,allPts.map(p=>p.y));
         }
-        const cost = typeof costValue === 'number' ? costValue : _cleanCost(costValue);
-        if (ts && ts.regression && ts.regression.r2 > 0.2 && cost > 10000)
-            return Math.max(30, Math.round(ts.regression.a * cost + ts.regression.b));
-        if (ts && ts.median > 0) return ts.median;
-        if (model.globalRegression && model.globalRegression.r2 > 0.2 && cost > 10000)
-            return Math.max(30, Math.round(model.globalRegression.a * cost + model.globalRegression.b));
-        if (model.globalStats.median > 0) return model.globalStats.median;
-        return 0;
+
+        // توافق مع الكود القديم
+        const typeStats={};
+        Object.entries(typeModels).forEach(([t,m])=>{
+            typeStats[t]={n:m.n,median:m.stats.median,mean:m.stats.mean,stddev:m.stats.stddev,
+                confidence:m.confidence,learningSlope:m.learningSlope,
+                regression:m.bestModel?{r2:m.bestModel.metrics?.r2||0,n:m.n,modelType:m.bestModel.modelType}:null};
+        });
+
+        _cache = {
+            totalCompleted:completed.length, globalStats, typeModels, typeStats, branchStats,
+            globalBestModel, globalAccuracy, completed, generatedAt:new Date().toISOString(),
+            accuracy:globalAccuracy,
+            globalRegression:globalBestModel?{a:globalBestModel.params.a,b:globalBestModel.params.b,
+                r2:globalBestModel.metrics?.r2||0,n:allPts.length,modelType:globalBestModel.modelType}:null,
+        };
+        _cacheTs = now;
+        return _cache;
     }
 
+    // ⑩ دالة التنبؤ الداخلية
+    function _predictFromTypeModel(tm, costNorm, costRaw) {
+        if (!tm) return 0;
+        if (tm.segments) {
+            const seg=tm.segments.find(s=>costRaw>=s.min&&costRaw<s.max);
+            if (seg&&seg.model) { const p=Math.round(Math.max(CFG.minDuration,Math.min(CFG.maxDuration,seg.model.fn(costNorm)))); if(p>0) return p; }
+        }
+        if (tm.bestModel&&costRaw>10000) { const p=Math.round(Math.max(CFG.minDuration,Math.min(CFG.maxDuration,tm.bestModel.fn(costNorm)))); if(p>0) return p; }
+        return tm.stats.median||0;
+    }
+
+    // ⑪ واجهة التنبؤ
+    function predictDurationByType(projectType, costValue) {
+        const db=typeof projectsDatabase!=='undefined'?projectsDatabase:null;
+        if (!db||!(db.timeline||[]).length) return 0;
+        const model=buildModel(); if (!model) return 0;
+        const type=(projectType||'').trim();
+        const cost=typeof costValue==='number'?costValue:_cleanCost(costValue);
+        const costNorm=cost/CFG.costNorm;
+        let tm=model.typeModels[type];
+        if (!tm) { const k=Object.keys(model.typeModels).find(k=>k.includes(type)||type.includes(k)); if(k) tm=model.typeModels[k]; }
+        let pred=_predictFromTypeModel(tm,costNorm,cost);
+        if (pred<=0&&model.globalBestModel&&cost>10000) pred=Math.max(CFG.minDuration,Math.round(model.globalBestModel.fn(costNorm)));
+        if (pred<=0) pred=model.globalStats.median||0;
+        return Math.round(pred);
+    }
     function predictDuration(project) {
         if (!project) return 0;
-        const cost = _cleanCost(project.contractValue || project.cost);
-        return predictDurationByType(project.projectType, cost);
+        return predictDurationByType(project.projectType,_cleanCost(project.contractValue||project.cost));
     }
 
+    // ⑫ التنبؤ مع الشرح الكامل
+    function getPredictionWithExplanation(project) {
+        const model=buildModel();
+        if (!model||!project) return {duration:0,explanation:'لا توجد بيانات تاريخية'};
+        const type=(project.projectType||'').trim();
+        const cost=_cleanCost(project.contractValue||project.cost);
+        const costNorm=cost/CFG.costNorm;
+        const branch=project.executingEntity||'';
+        let tm=model.typeModels[type];
+        if (!tm) { const k=Object.keys(model.typeModels).find(k=>k.includes(type)||type.includes(k)); if(k) tm=model.typeModels[k]; }
+        let duration=0, usedModel='—', usedSegment=null;
+        if (tm) {
+            if (tm.segments) {
+                const seg=tm.segments.find(s=>cost>=s.min&&cost<s.max);
+                if (seg&&seg.model) { duration=Math.max(CFG.minDuration,Math.round(seg.model.fn(costNorm))); usedModel=`شريحة (${seg.label}: ${seg.range}) — ${seg.model.modelType}`; usedSegment=seg; }
+            }
+            if (!duration&&tm.bestModel&&cost>10000) { duration=Math.max(CFG.minDuration,Math.round(tm.bestModel.fn(costNorm))); usedModel=`أفضل نموذج للنوع — ${tm.bestModel.modelType}`+(tm.bestModel.metrics?` (MAPE:${tm.bestModel.metrics.mape}%)`:''); }
+            if (!duration&&tm.stats.median>0) { duration=tm.stats.median; usedModel='وسيط النوع التاريخي'; }
+        } else if (model.globalBestModel&&cost>10000) {
+            duration=Math.max(CFG.minDuration,Math.round(model.globalBestModel.fn(costNorm)));
+            usedModel=`النموذج الشامل — ${model.globalBestModel.modelType}`;
+        } else { duration=model.globalStats.median||0; usedModel='الوسيط العام للمشاريع المنجزة'; }
+
+        const similar=_findSimilar(type,cost,branch,model.completed,CFG.similarityTopK);
+        let similarAvg=0, blended=false;
+        if (similar.length>=CFG.minSampleSimilarity) {
+            similarAvg=Math.round(similar.reduce((s,p)=>s+p._dur,0)/similar.length);
+            if (duration>0&&similarAvg>0&&Math.abs(duration-similarAvg)/similarAvg>CFG.blendThreshold) {
+                duration=Math.round((1-CFG.blendWeight)*duration+CFG.blendWeight*similarAvg);
+                blended=true;
+            }
+        }
+        const typeStddev=tm?tm.stats.stddev:model.globalStats.stddev;
+        return {
+            duration:Math.round(duration),
+            confInterval:typeStddev>0?[Math.max(CFG.minDuration,duration-typeStddev),Math.min(CFG.maxDuration,duration+typeStddev)]:null,
+            type, usedModel, usedSegment:usedSegment?usedSegment.label:null,
+            sampleSize:tm?tm.n:0, outliersRemoved:tm?tm.outliersRemoved:0,
+            confidence:tm?tm.confidence:'low',
+            similarProjects:similar.length, similarAvgDuration:similarAvg, blendedWithSimilar:blended,
+            typeAccuracy:tm?tm.accuracy:null,
+            modelMetrics:tm&&tm.bestModel?tm.bestModel.metrics:null,
+            segments:tm&&tm.segments?tm.segments.map(s=>({label:s.label,range:s.range,n:s.n,modelType:s.model?s.model.modelType:null})):null,
+        };
+    }
+
+    // ⑬ واجهة عامة
     function getBranchProductivityIndex(branch) {
-        const db = (typeof projectsDatabase !== 'undefined') ? projectsDatabase : null;
-        if (!db) return 1;
-        const model = buildModel();
-        if (!model || !model.branchStats[branch]) return 1;
-        return model.branchStats[branch].bpi || 1;
+        const model=buildModel();
+        if (!model||!model.branchStats[branch]) return 1;
+        return model.branchStats[branch].bpi||1;
     }
+    function getFullModel()    { return buildModel(); }
+    function invalidateCache() { _cache=null; _cacheTs=0; }
 
-    function getFullModel() { return buildModel(); }
-
-    return { predictDuration, predictDurationByType, getBranchProductivityIndex, getFullModel };
+    return { predictDuration, predictDurationByType, getPredictionWithExplanation,
+             getBranchProductivityIndex, getFullModel, invalidateCache, buildModel };
 })();
 window.HistoricalSchedulingEngine = HistoricalSchedulingEngine;
 
