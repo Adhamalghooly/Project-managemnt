@@ -2920,6 +2920,52 @@ tbody tr:hover {
       .engine-toggle { display:inline-flex; background:var(--bg-secondary); border:1px solid var(--gray-light); border-radius:10px; padding:4px; }
       .engine-toggle button { padding:7px 16px; border:none; background:transparent; cursor:pointer; border-radius:7px; font-weight:700; font-size:0.86rem; color:var(--text-secondary); }
       .engine-toggle button.active { background:var(--primary, #2c3e50); color:#fff; }
+      /* ═══ Home Page ═══ */
+      .home-hero{position:relative;overflow:hidden;border-radius:20px;margin-bottom:30px}
+      .home-hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#1d4ed8 100%)}
+      .home-hero-content{position:relative;z-index:2;padding:60px 30px 50px;text-align:center;color:#fff}
+      .home-logo-ring{font-size:3.5rem;margin-bottom:16px;display:inline-flex;align-items:center;justify-content:center;width:84px;height:84px;background:rgba(255,255,255,.12);border-radius:50%;backdrop-filter:blur(6px);border:2px solid rgba(255,255,255,.2)}
+      .home-title{font-size:2rem;font-weight:900;margin-bottom:10px;text-shadow:0 2px 20px rgba(0,0,0,.3)}
+      .home-subtitle{font-size:.95rem;opacity:.8;margin-bottom:34px;max-width:560px;margin-left:auto;margin-right:auto}
+      .home-stats-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:18px}
+      .home-stat-card{background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:16px 20px;text-align:center;min-width:120px;flex:1;max-width:170px;transition:transform .2s}
+      .home-stat-card:hover{transform:translateY(-3px)}
+      .home-stat-card.home-stat-green{background:rgba(16,185,129,.2);border-color:rgba(16,185,129,.4)}
+      .home-stat-card.home-stat-blue{background:rgba(59,130,246,.2);border-color:rgba(59,130,246,.4)}
+      .home-stat-card.home-stat-amber{background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.4)}
+      .home-stat-card.home-stat-cyan{background:rgba(6,182,212,.2);border-color:rgba(6,182,212,.4)}
+      .home-stat-num{font-size:1.9rem;font-weight:900;margin-bottom:4px}
+      .home-stat-lbl{font-size:.76rem;opacity:.85}
+      .home-last-update{font-size:.8rem;opacity:.5;margin-top:6px}
+      .home-quick-access{padding:10px 0 40px}
+      .home-section-title{font-size:1.2rem;font-weight:800;color:var(--text-primary,#1e293b);margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid var(--gray-light,#e2e8f0)}
+      .home-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+      .home-quick-card{background:var(--bg-secondary,#fff);border:1px solid var(--gray-light,#e2e8f0);border-radius:16px;padding:22px 18px;cursor:pointer;transition:all .22s;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+      .home-quick-card:hover{transform:translateY(-5px);box-shadow:0 10px 28px rgba(0,0,0,.12);border-color:var(--primary,#1e3a8a)}
+      .hqc-icon{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+      .hqc-title{font-weight:800;font-size:.92rem;color:var(--text-primary,#1e293b)}
+      .hqc-desc{font-size:.76rem;color:var(--text-secondary,#64748b);line-height:1.5}
+      /* ═══ Notifications ═══ */
+      .notif-bell-btn{position:relative;background:transparent;border:none;cursor:pointer;font-size:1.25rem;padding:6px 10px;border-radius:10px;transition:background .2s;color:var(--text-primary,#1e293b);line-height:1}
+      .notif-bell-btn:hover{background:rgba(0,0,0,.07)}
+      .notif-badge{position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:.6rem;font-weight:900;min-width:17px;height:17px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg-primary,#fff)}
+      .notif-panel{position:fixed;top:64px;left:16px;width:360px;max-height:80vh;overflow-y:auto;background:var(--bg-primary,#fff);border:1px solid var(--gray-light,#e2e8f0);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:9000;direction:rtl;display:none;animation:fadeSlideIn .18s ease}
+      .notif-panel.open{display:block}
+      @keyframes fadeSlideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+      .notif-panel-header{padding:14px 16px;border-bottom:1px solid var(--gray-light,#e2e8f0);display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;top:0;background:var(--bg-primary,#fff);z-index:2;border-radius:16px 16px 0 0}
+      .notif-panel-title{font-weight:800;font-size:.9rem;color:var(--text-primary,#1e293b);white-space:nowrap}
+      .notif-filter{padding:4px 8px;border:1px solid var(--gray-light,#e2e8f0);border-radius:8px;font-family:inherit;font-size:.78rem;background:var(--bg-secondary,#f8fafc);color:var(--text-primary,#1e293b);flex:1;max-width:160px}
+      .notif-close-btn{background:transparent;border:none;cursor:pointer;font-size:.9rem;color:var(--text-secondary,#64748b);padding:4px 6px;border-radius:6px}
+      .notif-close-btn:hover{background:rgba(0,0,0,.06)}
+      .notif-section{padding:10px 14px 4px}
+      .notif-section-title{font-size:.72rem;font-weight:800;letter-spacing:.04em;margin-bottom:8px;padding:4px 8px;border-radius:6px;display:inline-block}
+      .notif-item{background:var(--bg-secondary,#f8fafc);border-radius:10px;padding:10px 12px;margin-bottom:7px;border-right:3px solid}
+      .notif-item-name{font-weight:700;font-size:.83rem;color:var(--text-primary,#1e293b);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .notif-item-meta{display:flex;justify-content:space-between;align-items:center;gap:6px}
+      .notif-item-branch{font-size:.73rem;color:var(--text-secondary,#64748b)}
+      .notif-item-days{font-weight:800;font-size:.75rem}
+      .notif-empty{text-align:center;padding:14px;color:#94a3b8;font-size:.82rem;font-style:italic}
+      .notif-refresh-bar{padding:8px 14px;border-top:1px solid var(--gray-light,#e2e8f0);text-align:center}
     </style>
 </head>
 <body>
@@ -2932,6 +2978,9 @@ tbody tr:hover {
                 </div>
                 <div class="header-actions">
                     <div class="date-info" id="current-date"></div>
+                    <button class="notif-bell-btn" id="notif-bell-btn" onclick="Notifications.toggle()" title="الإشعارات">
+                        🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span>
+                    </button>
                     <button class="theme-toggle" id="theme-toggle" title="تبديل الوضع">
                         <span class="theme-icon">🌙</span>
                     </button>
@@ -2951,8 +3000,12 @@ tbody tr:hover {
                 <button class="sidebar-close" id="sidebar-close">✕</button>
             </div>
             <div class="sidebar-menu">
-                <button class="sidebar-btn active" data-section="data-management">
-                    <span class="nav-icon">  📁  إداره البيانات</span>
+                <button class="sidebar-btn active" data-section="home">
+                    <span class="nav-icon">🏠 الرئيسية</span>
+                    <span class="nav-text">الرئيسية</span>
+                </button>
+                <button class="sidebar-btn" data-section="data-management">
+                    <span class="nav-icon">📁 إدارة البيانات</span>
                     <span class="nav-text">إدارة البيانات</span>
                 </button>
                 <button class="sidebar-btn" data-section="reports">
@@ -3024,7 +3077,61 @@ tbody tr:hover {
         </div>
 
         <main class="main-content container">
-        <section id="data-management" class="section active">
+        <section id="home" class="section active">
+            <div class="home-hero">
+                <div class="home-hero-bg"></div>
+                <div class="home-hero-content">
+                    <div class="home-logo-ring">📊</div>
+                    <h1 class="home-title">نظام تحليل بيانات المشاريع</h1>
+                    <p class="home-subtitle">منصة متكاملة لإدارة ومتابعة وتحليل أداء المشاريع الهندسية</p>
+                    <div class="home-stats-row" id="home-stats-row">
+                        <div class="home-stat-card"><div class="home-stat-num" id="hs-total">—</div><div class="home-stat-lbl">إجمالي المشاريع</div></div>
+                        <div class="home-stat-card home-stat-green"><div class="home-stat-num" id="hs-done">—</div><div class="home-stat-lbl">✅ منجزة</div></div>
+                        <div class="home-stat-card home-stat-blue"><div class="home-stat-num" id="hs-ongoing">—</div><div class="home-stat-lbl">🔄 جارية</div></div>
+                        <div class="home-stat-card home-stat-amber"><div class="home-stat-num" id="hs-notstarted">—</div><div class="home-stat-lbl">⏳ لم تبدأ</div></div>
+                        <div class="home-stat-card home-stat-cyan"><div class="home-stat-num" id="hs-snapshots">—</div><div class="home-stat-lbl">📅 لقطات البيانات</div></div>
+                    </div>
+                    <div class="home-last-update" id="home-last-update">لم يتم تحميل بيانات بعد</div>
+                </div>
+            </div>
+            <div class="home-quick-access container">
+                <h2 class="home-section-title">⚡ الوصول السريع</h2>
+                <div class="home-cards-grid">
+                    <div class="home-quick-card" onclick="document.querySelector('[data-section=data-management]').click()">
+                        <div class="hqc-icon" style="background:linear-gradient(135deg,#1e40af,#3b82f6)">📁</div>
+                        <div class="hqc-title">إدارة البيانات</div>
+                        <div class="hqc-desc">تحميل ملفات Excel وإدارة السجل الزمني</div>
+                    </div>
+                    <div class="home-quick-card" onclick="document.querySelector('[data-section=kpi-dashboard]').click()">
+                        <div class="hqc-icon" style="background:linear-gradient(135deg,#065f46,#10b981)">📈</div>
+                        <div class="hqc-title">لوحة المؤشرات</div>
+                        <div class="hqc-desc">نظرة شاملة على أداء المشاريع والمؤشرات الرئيسية</div>
+                    </div>
+                    <div class="home-quick-card" onclick="document.querySelector('[data-section=reports]').click()">
+                        <div class="hqc-icon" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">📊</div>
+                        <div class="hqc-title">التقارير</div>
+                        <div class="hqc-desc">تقارير المشاريع المتوقفة، قرب الإنجاز، والتقرير الشهري</div>
+                    </div>
+                    <div class="home-quick-card" onclick="document.querySelector('[data-section=visual-analytics]').click()">
+                        <div class="hqc-icon" style="background:linear-gradient(135deg,#b45309,#f59e0b)">📉</div>
+                        <div class="hqc-title">التحليلات المرئية</div>
+                        <div class="hqc-desc">رسوم بيانية ومقارنات أداء الجهات المنفذة</div>
+                    </div>
+                    <div class="home-quick-card" onclick="document.querySelector('[data-section=branch-indicators]').click()">
+                        <div class="hqc-icon" style="background:linear-gradient(135deg,#0e7490,#06b6d4)">🏅</div>
+                        <div class="hqc-title">مؤشرات الأداء</div>
+                        <div class="hqc-desc">مؤشرات الأداء الخاصة بكل جهة منفذة</div>
+                    </div>
+                    <div class="home-quick-card" onclick="document.querySelector('[data-section=timeline-plan]').click()">
+                        <div class="hqc-icon" style="background:linear-gradient(135deg,#be123c,#f43f5e)">🗓️</div>
+                        <div class="hqc-title">الخطة الزمنية</div>
+                        <div class="hqc-desc">جدولة المشاريع والخطط الزمنية المتقدمة</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="data-management" class="section">
                 <div class="section-header">
                     <h2>📁 إدارة البيانات</h2>
                     <p>تحميل وإدارة ملفات المشاريع</p>
@@ -4849,6 +4956,20 @@ tbody tr:hover {
         </main>
 
         <div id="notification" class="notification"></div>
+        <!-- Notification Panel -->
+        <div id="notif-panel" class="notif-panel" role="dialog" aria-label="الإشعارات">
+            <div class="notif-panel-header">
+                <span class="notif-panel-title">🔔 الإشعارات</span>
+                <select class="notif-filter" id="notif-branch-filter" onchange="Notifications.refresh()">
+                    <option value="">كل الجهات</option>
+                </select>
+                <button class="notif-close-btn" onclick="Notifications.close()">✕</button>
+            </div>
+            <div id="notif-content"></div>
+            <div class="notif-refresh-bar">
+                <button class="btn btn-primary" style="font-size:.78rem;padding:5px 14px;" onclick="Notifications.refresh()">🔄 تحديث</button>
+            </div>
+        </div>
         <div id="modal" class="modal"></div>
         <div id="loading" class="loading-overlay">
             <div class="loading-spinner"></div>
@@ -18001,6 +18122,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         EVMAnalytics.init();
         CriticalPath.init();
+        Notifications.init();
+        refreshHomeStats();
         
         console.log('✅ تم تهيئة النظام بنجاح');
         showNotification('تم تحميل النظام بنجاح', 'success');
@@ -18009,6 +18132,186 @@ document.addEventListener('DOMContentLoaded', async function() {
         showNotification('حدث خطأ أثناء تحميل النظام', 'error');
     }
 });
+
+/* ══════════════════════════════════════════════════
+   Notifications System
+══════════════════════════════════════════════════ */
+const Notifications = (function() {
+    let _open = false;
+
+    function _timeline() {
+        return [...(projectsDatabase.timeline||[])].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    }
+
+    function _firstDateWhenContinuous(projectNumber, condFn) {
+        const tl = _timeline();
+        let firstDate = null;
+        for (let i = tl.length-1; i >= 0; i--) {
+            const p = tl[i].projects?.find(pp=>pp.projectNumber===projectNumber);
+            if (p && condFn(p)) { firstDate = tl[i].date; }
+            else if (firstDate) break;
+        }
+        return firstDate;
+    }
+
+    function _daysSince(dateStr) {
+        if (!dateStr) return 0;
+        const d = new Date(dateStr);
+        if (isNaN(d)) return 0;
+        return Math.max(0, Math.floor((new Date()-d)/86400000));
+    }
+
+    function _isNear(p) {
+        const c=p.civilProgress||0, t=p.technicalProgress||0;
+        return (c>=90&&(t>=90||t===0||t===null||t===undefined))||(c===0&&t>=90)||(t>=90&&c>=80&&c<90);
+    }
+
+    function compute(branchFilter) {
+        const tl = _timeline();
+        if (!tl.length) return [];
+        const latest = tl[tl.length-1];
+        let projs = (latest.projects||[]).filter(p=>!branchFilter||p.executingEntity===branchFilter);
+        const groups = [];
+
+        // 1. منجز + فحص أولي — الأطول مدة
+        const preAudit = projs
+            .filter(p=>{
+                const st=(p.status||'').trim(), sub=(p.subStatus||'').trim();
+                return (st==='منجز'||st==='مكتمل')&&(sub.includes('فحص أولي')||sub.includes('فحص اولي'));
+            })
+            .map(p=>({...p, days:_daysSince(_firstDateWhenContinuous(p.projectNumber, pp=>{
+                const s=(pp.status||'').trim(),u=(pp.subStatus||'').trim();
+                return (s==='منجز'||s==='مكتمل')&&(u.includes('فحص أولي')||u.includes('فحص اولي'));
+            }))}))
+            .sort((a,b)=>b.days-a.days).slice(0,3);
+        groups.push({title:'🔍 منجز — فحص أولي (الأطول مدة)',color:'#0e7490',items:preAudit,lbl:'يوم في الفحص الأولي'});
+
+        // 2. جارية متوقفة — الأطول توقفاً
+        const stalled = projs
+            .filter(p=>{
+                const st=p.status||'';
+                return st.includes('جاري')&&!st.includes('جاري الاقفال')&&!st.includes('جاري التسليم')&&!st.includes('جارى')
+                    &&(p.civilProgress||0)<85&&(p.technicalProgress||0)<89;
+            })
+            .map(p=>({...p, days:_daysSince(_firstDateWhenContinuous(p.projectNumber, pp=>
+                pp.civilProgress===p.civilProgress&&pp.technicalProgress===p.technicalProgress&&pp.status===p.status
+            ))}))
+            .sort((a,b)=>b.days-a.days).slice(0,3);
+        groups.push({title:'⛔ جارية متوقفة (الأطول توقفاً)',color:'#dc2626',items:stalled,lbl:'يوم متوقف'});
+
+        // 3. قرب الإنجاز — الأطول انتظاراً
+        const nearing = projs
+            .filter(p=>{
+                const st=p.status||'';
+                return st.includes('جاري')&&!st.includes('جاري الاقفال')&&!st.includes('جاري التسليم')&&_isNear(p);
+            })
+            .map(p=>({...p, days:_daysSince(_firstDateWhenContinuous(p.projectNumber, pp=>{
+                const st=pp.status||'';
+                return st.includes('جاري')&&!st.includes('جاري الاقفال')&&!st.includes('جاري التسليم')&&_isNear(pp);
+            }))}))
+            .sort((a,b)=>b.days-a.days).slice(0,3);
+        groups.push({title:'🏁 قرب الإنجاز (الأطول انتظاراً)',color:'#10b981',items:nearing,lbl:'يوم قرب الإنجاز'});
+
+        // 4. VIP لم تبدأ — الأطول مدة
+        const vipNS = projs
+            .filter(p=>{
+                const st=p.status||'', tp=(p.projectType||'').toLowerCase();
+                return (st.includes('لم يبدأ')||st.includes('لم يبداء'))&&(tp.includes('vip')||(p.projectName||'').toLowerCase().includes('vip'));
+            })
+            .map(p=>({...p, days:_daysSince(_firstDateWhenContinuous(p.projectNumber, pp=>{
+                const st=pp.status||'', tp=(pp.projectType||'').toLowerCase();
+                return (st.includes('لم يبدأ')||st.includes('لم يبداء'))&&(tp.includes('vip')||(pp.projectName||'').toLowerCase().includes('vip'));
+            }))}))
+            .sort((a,b)=>b.days-a.days).slice(0,3);
+        groups.push({title:'⭐ VIP لم تبدأ (الأطول مدة)',color:'#f59e0b',items:vipNS,lbl:'يوم لم تبدأ'});
+
+        return groups;
+    }
+
+    function _renderItem(item, color, lbl) {
+        return `<div class="notif-item" style="border-color:${color}">
+            <div class="notif-item-name" title="${item.projectName||''}">${item.projectName||item.projectNumber||'—'}</div>
+            <div class="notif-item-meta">
+                <span class="notif-item-branch">${item.executingEntity||'—'}</span>
+                <span class="notif-item-days" style="color:${color}">⏱ ${item.days} ${lbl}</span>
+            </div>
+        </div>`;
+    }
+
+    function _render() {
+        const filter = document.getElementById('notif-branch-filter')?.value||'';
+        let groups;
+        try { groups = compute(filter); } catch(e) { groups = []; }
+
+        let total = 0; groups.forEach(g=>total+=g.items.length);
+        const badge = document.getElementById('notif-badge');
+        if (badge) { badge.textContent=total; badge.style.display=total>0?'':'none'; }
+
+        const content = document.getElementById('notif-content');
+        if (!content) return;
+        if (!groups.length || !total) { content.innerHTML='<div class="notif-empty">لا توجد بيانات متاحة</div>'; return; }
+        content.innerHTML = groups.map(g=>`
+            <div class="notif-section">
+                <div class="notif-section-title" style="color:${g.color};background:${g.color}15">${g.title}</div>
+                ${g.items.length ? g.items.map(it=>_renderItem(it,g.color,g.lbl)).join('') : '<div class="notif-empty">لا توجد مشاريع</div>'}
+            </div>`).join('');
+    }
+
+    function _populateBranches() {
+        const sel = document.getElementById('notif-branch-filter');
+        if (!sel) return;
+        const tl = _timeline();
+        if (!tl.length) return;
+        const projs = tl[tl.length-1].projects||[];
+        const branches = [...new Set(projs.map(p=>p.executingEntity).filter(Boolean))].sort();
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">كل الجهات</option>' +
+            branches.map(b=>`<option value="${b}"${b===cur?' selected':''}>${b}</option>`).join('');
+    }
+
+    return {
+        init() {
+            document.addEventListener('click', e=>{
+                const panel=document.getElementById('notif-panel');
+                const bell=document.getElementById('notif-bell-btn');
+                if (panel&&bell&&!panel.contains(e.target)&&!bell.contains(e.target)&&_open) {
+                    panel.classList.remove('open'); _open=false;
+                }
+            });
+            // تحديث الشارة عند تحميل البيانات
+            setTimeout(()=>{ try{ const g=compute(''); let t=0; g.forEach(x=>t+=x.items.length); const b=document.getElementById('notif-badge'); if(b){b.textContent=t;b.style.display=t>0?'':'none';} }catch(e){} }, 2000);
+        },
+        toggle() {
+            const panel=document.getElementById('notif-panel');
+            if (!panel) return;
+            _open=!_open;
+            panel.classList.toggle('open',_open);
+            if (_open) { _populateBranches(); _render(); }
+        },
+        close() { const p=document.getElementById('notif-panel'); if(p)p.classList.remove('open'); _open=false; },
+        refresh() { if(_open){_populateBranches();_render();} }
+    };
+})();
+
+/* ══════════════════════════════════════════════════
+   Home Page Stats
+══════════════════════════════════════════════════ */
+function refreshHomeStats() {
+    try {
+        const data = getLatestData();
+        const setText=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+        if (!data||!data.projects) {
+            setText('home-last-update','لم يتم تحميل بيانات بعد'); return;
+        }
+        const p=data.projects;
+        setText('hs-total', p.length.toLocaleString('ar-EG'));
+        setText('hs-done', p.filter(x=>(x.status||'').includes('منجز')||(x.status||'').includes('مكتمل')).length.toLocaleString('ar-EG'));
+        setText('hs-ongoing', p.filter(x=>(x.status||'').includes('جاري')).length.toLocaleString('ar-EG'));
+        setText('hs-notstarted', p.filter(x=>(x.status||'').includes('لم يبدأ')||(x.status||'').includes('لم يبداء')).length.toLocaleString('ar-EG'));
+        setText('hs-snapshots', projectsDatabase.timeline.length);
+        setText('home-last-update', data.date ? 'آخر تحديث: '+new Date(data.date).toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'}) : '—');
+    } catch(e) { console.warn('refreshHomeStats:', e); }
+}
 
 function initNavigation() {
     const sidebarBtns = document.querySelectorAll('.sidebar-btn');
@@ -27580,11 +27883,45 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
 .mr-footer{text-align:center;margin-top:20px;color:#94a3b8;font-size:.75rem}
 .print-btn{position:fixed;top:16px;left:16px;z-index:9999;background:#2563eb;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;border:none;font-family:Cairo;font-size:.95rem;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .page-break{page-break-before:always}
-</style></head><body>
-<div class="no-print" style="position:fixed;top:16px;left:16px;z-index:9999;display:flex;gap:10px;flex-wrap:wrap;">
-  <button class="print-btn" onclick="printSummary()" style="background:#1e3a8a;">🖨️ طباعة خلاصة المدير</button>
-  <button class="print-btn" onclick="printEngineers()" style="background:#065f46;">🖨️ طباعة جداول المهندسين</button>
+/* ── Topbar + Tabs ── */
+.mr-topbar{position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 14px rgba(0,0,0,.13);flex-wrap:wrap}
+.mr-tab-nav{display:flex;gap:6px}
+.mr-tab-btn{padding:8px 22px;border:none;border-radius:24px;cursor:pointer;font-family:Cairo,sans-serif;font-size:.92rem;font-weight:700;transition:all .2s;background:#f1f5f9;color:#475569}
+.mr-tab-btn.mr-tab-active{background:#1e3a8a;color:#fff;box-shadow:0 3px 10px rgba(30,58,138,.3)}
+.mr-print-btns{display:flex;gap:8px;flex-wrap:wrap}
+.mr-print-btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:Cairo,sans-serif;font-size:.83rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:5px}
+.mr-tab-panel{display:none}
+.mr-tab-panel.mr-active{display:block}
+.mr-subtab-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 20px 20px;padding:12px 16px;background:#f8faff;border-radius:12px;border:1px solid #e2e8f0;position:sticky;top:68px;z-index:100}
+.mr-subtab-btn{padding:7px 18px;border:1.5px solid #cbd5e1;border-radius:20px;cursor:pointer;font-family:Cairo,sans-serif;font-size:.84rem;font-weight:700;background:#fff;color:#475569;transition:all .2s}
+.mr-subtab-btn.mr-subtab-active{background:#1e3a8a;color:#fff;border-color:#1e3a8a;box-shadow:0 2px 8px rgba(30,58,138,.25)}
+.mr-subtbl-panel{display:none}
+.mr-subtbl-panel.mr-sub-active{display:block}
+@media print{
+  .mr-topbar{display:none!important}
+  body{padding-top:0!important}
+  body.print-summary #mr-panel-tables{display:none!important}
+  body.print-summary #mr-panel-summary{display:block!important}
+  body.print-engineers #mr-panel-summary{display:none!important}
+  body.print-engineers #mr-panel-tables{display:block!important}
+  body.print-engineers .mr-subtbl-panel{display:block!important}
+  body.print-engineers .mr-subtab-nav{display:none!important}
+}
+</style></head><body style="padding-top:68px">
+<!-- Topbar: tabs + print buttons -->
+<div class="mr-topbar no-print">
+  <div class="mr-tab-nav">
+    <button class="mr-tab-btn mr-tab-active" onclick="mrSwitchTab('summary')" id="mrt-summary">📋 خلاصات</button>
+    <button class="mr-tab-btn" onclick="mrSwitchTab('tables')" id="mrt-tables">📊 جداول المشاريع</button>
+  </div>
+  <div class="mr-print-btns">
+    <button class="mr-print-btn" onclick="printSummary()" style="background:#1e3a8a;">🖨️ طباعة خلاصة المدير</button>
+    <button class="mr-print-btn" onclick="printEngineers()" style="background:#065f46;">🖨️ طباعة جداول المهندسين</button>
+  </div>
 </div>
+
+<!-- Tab 1: خلاصات -->
+<div id="mr-panel-summary" class="mr-tab-panel mr-active">
 <div class="mr-cover summary-section">
   <h1>📅 التقرير الدوري للأداء</h1>
   <h2>${d.label}${d.branchFilter ? ' — ' + d.branchFilter : ''}</h2>
@@ -27655,35 +27992,60 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
 <h3 class="mr-section page-break summary-section">2️⃣ الخلاصة على مستوى نوع المشروع</h3>
 <div class="tbl-wrap summary-section">${summaryTbl(d.typeSummary,'نوع المشروع')}</div>
 
-<h3 class="mr-section page-break summary-section" style="background:linear-gradient(90deg,#0e7490,#06b6d4);">3️⃣ مشاريع تم تسليم ملفاتها (${d.fileDeliveredProjects.length}) — تحولت من فحص أولي خلال الفترة</h3>
-<div class="tbl-wrap summary-section">${fileDeliveredTbl(d.fileDeliveredProjects)}</div>
-
-<h3 class="mr-section page-break summary-section" style="background:linear-gradient(90deg,#92400e,#d97706);">4️⃣ مشاريع فحص أولي (${d.preAuditNowProjects.length}) — حالة رئيسية منجز${d.avgPreAuditDays!==null?' | متوسط '+d.avgPreAuditDays+' يوم في الفحص الأولي':''}</h3>
-<div class="tbl-wrap summary-section">${preAuditTbl(d.preAuditNowProjects)}</div>
-
-<div class="sig-row summary-section">
+<div class="sig-row summary-section" style="margin-top:40px;">
   <div class="sig-box"><div class="sig-label">مُعِدّ التقرير</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
   <div class="sig-box"><div class="sig-label">المهندس المسؤول</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
   <div class="sig-box"><div class="sig-label">مدير القسم</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
   <div class="sig-box"><div class="sig-label">مدير الإدارة</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
 </div>
 <div class="mr-footer summary-section">نظام تحليل بيانات المشاريع — ${d.label} — إصدار: ${fmtDate(new Date())}</div>
+</div><!-- end mr-panel-summary -->
 
-<h3 class="mr-section engineer-section" style="page-break-before:always;">5️⃣ المشاريع المُنجَزة (${d.completedProjects.length}) — تحليل الانحراف الزمني
-  <button class="dev-filter-btn no-print" id="dfb-completed" onclick="toggleDev('completed')" style="margin-right:12px;">🔴 المتأخرة فقط</button>
-</h3>
-<div class="tbl-wrap engineer-section" id="wrap-completed">${completedTbl(d.completedProjects)}</div>
+<!-- Tab 2: جداول -->
+<div id="mr-panel-tables" class="mr-tab-panel">
 
-<h3 class="mr-section page-break engineer-section">6️⃣ المشاريع المنطلقة (${d.startedProjects.length}) — تحليل الانحراف الزمني
-  <button class="dev-filter-btn no-print" id="dfb-started" onclick="toggleDev('started')" style="margin-right:12px;">🔴 المتأخرة فقط</button>
-</h3>
-<div class="tbl-wrap engineer-section" id="wrap-started">${startedTbl(d.startedProjects)}</div>
+  <!-- Sub-tab navigation -->
+  <div class="mr-subtab-nav no-print">
+    <button class="mr-subtab-btn mr-subtab-active" onclick="mrShowTbl('started')" id="mrst-started">🚀 المنطلقة (${d.startedProjects.length})</button>
+    <button class="mr-subtab-btn" onclick="mrShowTbl('completed')" id="mrst-completed">✅ المُنجَزة (${d.completedProjects.length})</button>
+    <button class="mr-subtab-btn" onclick="mrShowTbl('filedelivered')" id="mrst-filedelivered">📁 تسليم الملفات (${d.fileDeliveredProjects.length})</button>
+    <button class="mr-subtab-btn" onclick="mrShowTbl('preaudit')" id="mrst-preaudit">🔍 فحص أولي (${d.preAuditNowProjects.length})</button>
+  </div>
 
-<div class="sig-row engineer-section">
-  <div class="sig-box"><div class="sig-label">المهندس المسؤول</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
-  <div class="sig-box"><div class="sig-label">مدير القسم</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
-</div>
-<div class="mr-footer engineer-section">نظام تحليل بيانات المشاريع — ${d.label} — إصدار: ${fmtDate(new Date())}</div>
+  <!-- Panel: المشاريع المنطلقة (default shown) -->
+  <div class="mr-subtbl-panel mr-sub-active engineer-section" id="mrp-started">
+    <h3 class="mr-section">🚀 المشاريع المنطلقة (${d.startedProjects.length}) — تحليل الانحراف الزمني
+      <button class="dev-filter-btn no-print" id="dfb-started" onclick="toggleDev('started')">🔴 المتأخرة فقط</button>
+    </h3>
+    <div class="tbl-wrap" id="wrap-started">${startedTbl(d.startedProjects)}</div>
+  </div>
+
+  <!-- Panel: المشاريع المُنجَزة -->
+  <div class="mr-subtbl-panel engineer-section" id="mrp-completed">
+    <h3 class="mr-section">✅ المشاريع المُنجَزة (${d.completedProjects.length}) — تحليل الانحراف الزمني
+      <button class="dev-filter-btn no-print" id="dfb-completed" onclick="toggleDev('completed')">🔴 المتأخرة فقط</button>
+    </h3>
+    <div class="tbl-wrap" id="wrap-completed">${completedTbl(d.completedProjects)}</div>
+  </div>
+
+  <!-- Panel: تسليم الملفات -->
+  <div class="mr-subtbl-panel engineer-section" id="mrp-filedelivered">
+    <h3 class="mr-section" style="background:linear-gradient(90deg,#0e7490,#06b6d4);">📁 مشاريع تم تسليم ملفاتها (${d.fileDeliveredProjects.length}) — تحولت من فحص أولي خلال الفترة</h3>
+    <div class="tbl-wrap">${fileDeliveredTbl(d.fileDeliveredProjects)}</div>
+  </div>
+
+  <!-- Panel: فحص أولي -->
+  <div class="mr-subtbl-panel engineer-section" id="mrp-preaudit">
+    <h3 class="mr-section" style="background:linear-gradient(90deg,#92400e,#d97706);">🔍 مشاريع فحص أولي (${d.preAuditNowProjects.length}) — حالة رئيسية منجز${d.avgPreAuditDays!==null?' | متوسط '+d.avgPreAuditDays+' يوم':''}</h3>
+    <div class="tbl-wrap">${preAuditTbl(d.preAuditNowProjects)}</div>
+  </div>
+
+  <div class="sig-row engineer-section" style="margin-top:40px;">
+    <div class="sig-box"><div class="sig-label">المهندس المسؤول</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
+    <div class="sig-box"><div class="sig-label">مدير القسم</div><div class="sig-line">الاسم / التوقيع / التاريخ</div></div>
+  </div>
+  <div class="mr-footer engineer-section">نظام تحليل بيانات المشاريع — ${d.label} — إصدار: ${fmtDate(new Date())}</div>
+</div><!-- end mr-panel-tables -->
 
 <script>
 (function(){
@@ -27717,17 +28079,33 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
       if(nr&&nr.classList.contains('note-row')) nr.style.display=show?'':'none';
     });
   };
+  window.mrSwitchTab=function(tab){
+    ['summary','tables'].forEach(function(t){
+      var panel=document.getElementById('mr-panel-'+t);
+      var btn=document.getElementById('mrt-'+t);
+      if(panel){ panel.classList.toggle('mr-active', t===tab); }
+      if(btn){ btn.classList.toggle('mr-tab-active', t===tab); }
+    });
+  };
+  window.mrShowTbl=function(tbl){
+    ['started','completed','filedelivered','preaudit'].forEach(function(t){
+      var panel=document.getElementById('mrp-'+t);
+      var btn=document.getElementById('mrst-'+t);
+      if(panel){ panel.classList.toggle('mr-sub-active', t===tbl); }
+      if(btn){ btn.classList.toggle('mr-subtab-active', t===tbl); }
+    });
+  };
   window.printSummary=function(){
     document.body.classList.remove('print-engineers');
     document.body.classList.add('print-summary');
     window.print();
-    setTimeout(function(){ document.body.classList.remove('print-summary'); }, 1000);
+    setTimeout(function(){ document.body.classList.remove('print-summary'); }, 1200);
   };
   window.printEngineers=function(){
     document.body.classList.remove('print-summary');
     document.body.classList.add('print-engineers');
     window.print();
-    setTimeout(function(){ document.body.classList.remove('print-engineers'); }, 1000);
+    setTimeout(function(){ document.body.classList.remove('print-engineers'); }, 1200);
   };
 })();
 <\/script>
