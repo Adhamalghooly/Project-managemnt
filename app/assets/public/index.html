@@ -28445,47 +28445,54 @@ table.mr-tbl tr:not(.note-row):hover td{background:#eff6ff}
       if(btn){ btn.classList.toggle('mr-subtab-active', t===tbl); }
     });
   };
+  function _mrPrintWin(titleTxt, bodyHtml) {
+    var styles = '*{box-sizing:border-box;margin:0;padding:0}' +
+      'body{font-family:Cairo,Arial,sans-serif;direction:rtl;padding:16px;background:#fff;color:#1e293b}' +
+      'table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11px}' +
+      'th,td{border:1px solid #555;padding:6px 8px;text-align:center;vertical-align:middle}' +
+      'th{background:#1e3a8a;color:#fff;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      'tr:nth-child(even) td{background:#f0f4ff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      'h2,h3{color:#1e3a8a;margin:12px 0 8px;font-size:12pt}' +
+      '.mr-kpi{display:inline-block;border-radius:10px;padding:12px 16px;margin:4px;text-align:center;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      '.kpi-num{font-size:1.8rem;font-weight:900;line-height:1}' +
+      '.kpi-lbl{font-size:.72rem;margin-top:6px;opacity:.9}' +
+      '.kpi-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}' +
+      '.sig-row{display:flex;gap:20px;justify-content:space-around;margin-top:30px;flex-wrap:wrap}' +
+      '.sig-box{flex:1;min-width:130px;text-align:center}' +
+      '.sig-label{font-weight:700;margin-bottom:40px;color:#475569}' +
+      '.sig-line{border-top:1px solid #1f2937;padding-top:4px;font-size:.78rem;color:#64748b}' +
+      'h3.mr-section{padding:8px 14px;border-radius:6px;background:#1e3a8a;color:#fff;margin:16px 0 10px;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      '.tbl-wrap{overflow-x:auto;margin-bottom:20px}' +
+      '.no-print,.mr-topbar,.mr-subtab-nav{display:none!important}' +
+      '@page{size:A4;margin:14mm}' +
+      '@media print{button,.no-print,.mr-topbar,.mr-subtab-nav{display:none!important}}';
+    var w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head>' +
+      '<meta charset="UTF-8">' +
+      '<title>' + titleTxt + '</title>' +
+      '<style>' + styles + '</style>' +
+      '</head><body>' +
+      '<h2 style="text-align:center;border-bottom:2px solid #1e3a8a;padding-bottom:8px;margin-bottom:18px;">' + titleTxt + '</h2>' +
+      bodyHtml +
+      '</body></html>');
+    w.document.close();
+    setTimeout(function(){ w.print(); }, 500);
+  }
   window.printSummary=function(){
-    /* إظهار لوح الخلاصة وإخفاء الجداول إجبارياً */
     var sumP=document.getElementById('mr-panel-summary');
-    var tblP=document.getElementById('mr-panel-tables');
-    var origSum=sumP?sumP.style.display:'';
-    var origTbl=tblP?tblP.style.display:'';
-    if(sumP){ sumP.style.setProperty('display','block','important'); }
-    if(tblP){ tblP.style.setProperty('display','none','important'); }
-    document.body.classList.remove('print-engineers');
-    document.body.classList.add('print-summary');
-    window.print();
-    setTimeout(function(){
-      document.body.classList.remove('print-summary');
-      if(sumP) sumP.style.display=origSum;
-      if(tblP) tblP.style.display=origTbl;
-    }, 1200);
+    if(!sumP){ window.print(); return; }
+    _mrPrintWin('📋 خلاصة المدير — التقرير الدوري', sumP.innerHTML);
   };
   window.printEngineers=function(){
-    /* إظهار لوح الجداول وجميع اللوحات الفرعية الأربعة إجبارياً */
-    var sumP=document.getElementById('mr-panel-summary');
-    var tblP=document.getElementById('mr-panel-tables');
     var panelIds=['mrp-started','mrp-completed','mrp-filedelivered','mrp-preaudit'];
-    var origDisplay={};
-    if(sumP){ origDisplay['sum']=sumP.style.display; sumP.style.setProperty('display','none','important'); }
-    if(tblP){ origDisplay['tbl']=tblP.style.display; tblP.style.setProperty('display','block','important'); }
+    var parts=[];
     panelIds.forEach(function(id){
       var el=document.getElementById(id);
-      if(el){ origDisplay[id]=el.style.display; el.style.setProperty('display','block','important'); }
+      if(el) parts.push(el.innerHTML);
     });
-    document.body.classList.remove('print-summary');
-    document.body.classList.add('print-engineers');
-    window.print();
-    setTimeout(function(){
-      document.body.classList.remove('print-engineers');
-      if(sumP) sumP.style.display=origDisplay['sum']||'';
-      if(tblP) tblP.style.display=origDisplay['tbl']||'';
-      panelIds.forEach(function(id){
-        var el=document.getElementById(id);
-        if(el) el.style.display=origDisplay[id]||'';
-      });
-    }, 1200);
+    if(!parts.length){ window.print(); return; }
+    _mrPrintWin('📊 جداول المهندسين — التقرير الدوري', parts.join('<div style="page-break-before:always;margin:0;padding:0;"></div>'));
   };
 })();
 <\/script>
@@ -28634,8 +28641,7 @@ const CapacityScheduler = (function() {
   let _typeConfig = {};
 
   function _getData() {
-    if (window.projectsDatabase) return window.projectsDatabase;
-    if (window.DataManager && DataManager.getProjectsDatabase) return DataManager.getProjectsDatabase();
+    if (typeof projectsDatabase !== 'undefined' && projectsDatabase && Array.isArray(projectsDatabase.timeline)) return projectsDatabase;
     return null;
   }
   function _getProjects() {
@@ -28934,8 +28940,7 @@ const CapacityScheduler = (function() {
 const ExecReports = (function() {
   let _currentData = { health:[], critical:[], productivity:[], scorecard:[] };
   function _getData() {
-    if (window.projectsDatabase) return window.projectsDatabase;
-    if (window.DataManager&&DataManager.getProjectsDatabase) return DataManager.getProjectsDatabase();
+    if (typeof projectsDatabase !== 'undefined' && projectsDatabase && Array.isArray(projectsDatabase.timeline)) return projectsDatabase;
     return null;
   }
   function _getSnap(dateStr) {
