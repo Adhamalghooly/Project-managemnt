@@ -5197,53 +5197,54 @@ tbody tr:hover {
 ═══════════════════════════════════════════════════════════════════ -->
 <section id="executive-reports" class="section">
   <div class="section-header">
-    <h2>📋 تقارير الإدارة العليا</h2>
-    <p>تقارير موحدة للمدير العام — صحة الفروع، المتعثرة والحرجة، الإنتاجية الشهرية، وبطاقة الأداء الربعية</p>
+    <h2>📋 لوحة القيادة التنفيذية</h2>
+    <p>تقارير موحدة للمدير العام — KPI فوري، تنبيهات ذكية، أداء الجهات، تحليلات متقدمة، ودقة التنبؤ</p>
   </div>
 
-  <div class="report-card" style="margin-bottom:18px; padding:14px 18px;">
+  <!-- شريط الفلاتر والأزرار -->
+  <div class="report-card" style="margin-bottom:18px; padding:14px 18px; background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 100%); border:1px solid #c7d2fe;">
     <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
       <div>
-        <label style="display:block; font-size:0.83rem; font-weight:600; margin-bottom:4px;">التاريخ الحالي:</label>
+        <label style="display:block; font-size:0.83rem; font-weight:600; margin-bottom:4px; color:var(--primary);">📅 التاريخ الحالي:</label>
         <select id="exec-date-current" style="min-width:160px; padding:8px 12px; border:1px solid var(--gray-light); border-radius:8px;" onchange="ExecReports.onDateChange()">
           <option value="">-- اختر --</option>
         </select>
       </div>
       <div>
-        <label style="display:block; font-size:0.83rem; font-weight:600; margin-bottom:4px;">التاريخ السابق (للمقارنة):</label>
+        <label style="display:block; font-size:0.83rem; font-weight:600; margin-bottom:4px; color:var(--primary);">📅 السابق (للمقارنة):</label>
         <select id="exec-date-prev" style="min-width:160px; padding:8px 12px; border:1px solid var(--gray-light); border-radius:8px;">
           <option value="">-- اختياري --</option>
         </select>
       </div>
       <div>
-        <label style="display:block; font-size:0.83rem; font-weight:600; margin-bottom:4px;">الفرع:</label>
+        <label style="display:block; font-size:0.83rem; font-weight:600; margin-bottom:4px; color:var(--primary);">🏢 الجهة المنفذة:</label>
         <select id="exec-branch-filter" style="min-width:160px; padding:8px 12px; border:1px solid var(--gray-light); border-radius:8px;">
-          <option value="">جميع الفروع</option>
+          <option value="">جميع الجهات</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="ExecReports.generateAll()">⚡ توليد جميع التقارير</button>
+      <button class="btn btn-primary" onclick="ExecReports.generateAll()" style="padding:9px 20px; font-weight:700;">⚡ توليد اللوحة</button>
       <button class="btn btn-success" onclick="ExecReports.printAll()">🖨️ طباعة الكل</button>
       <button class="btn btn-warning" onclick="ExecReports.exportAll()">📊 تصدير Excel</button>
     </div>
   </div>
 
-  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #185FA5;">
+  <!-- ═══ لوحة KPI الرئيسية ═══ -->
+  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #0f2d5e; background:linear-gradient(135deg,#fff 0%,#f0f9ff 100%);">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-      <h3 style="margin:0;">🏥 تقرير الصحة التشغيلية للفروع</h3>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <span style="font-size:0.8rem; background:#d1fae5; color:#065f46; padding:3px 10px; border-radius:10px;">A — ممتاز</span>
-        <span style="font-size:0.8rem; background:#dbeafe; color:#1e40af; padding:3px 10px; border-radius:10px;">B — جيد</span>
-        <span style="font-size:0.8rem; background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:10px;">C — يحتاج متابعة</span>
-        <span style="font-size:0.8rem; background:#fee2e2; color:#991b1b; padding:3px 10px; border-radius:10px;">D — حرج</span>
+      <h3 style="margin:0; color:#0f2d5e;">📊 مؤشرات الأداء الرئيسية — KPI Dashboard</h3>
+      <span style="font-size:0.8rem; color:var(--text-secondary);">يُحدَّث تلقائياً عند التوليد</span>
+    </div>
+    <div id="exec-kpi-grid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:12px;">
+      <div style="text-align:center; padding:20px 12px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; color:#94a3b8;">
+        <div style="font-size:2rem;">—</div><div style="font-size:0.78rem; margin-top:6px;">اضغط "توليد اللوحة"</div>
       </div>
     </div>
-    <p style="color:var(--text-secondary); font-size:0.86rem; margin-bottom:12px;">تصنيف كل فرع بدرجة صحة بناءً على: نسبة المتوقفة، نسبة بلا تحديث، انحراف التزمين، ونسبة الإنجاز مقابل المخطط.</p>
-    <div id="exec-health-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد جميع التقارير" لعرض النتائج</div></div>
   </div>
 
-  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #ef4444;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
-      <h3 style="margin:0;">🚨 القائمة الحمراء — المشاريع المتعثرة والحرجة</h3>
+  <!-- ═══ لوحة التنبيهات الذكية ═══ -->
+  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #ef4444; background:linear-gradient(135deg,#fff 0%,#fff1f2 100%);">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+      <h3 style="margin:0; color:#991b1b;">🔔 لوحة التنبيهات الذكية</h3>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <select id="exec-critical-type" style="padding:7px 12px; border:1px solid var(--gray-light); border-radius:8px; font-size:0.85rem;" onchange="ExecReports.filterCritical()">
           <option value="all">جميع أنواع التعثر</option>
@@ -5251,42 +5252,74 @@ tbody tr:hover {
           <option value="no-update">بلا تحديث +30 يوم</option>
           <option value="over-timeline">تجاوزت التزمين</option>
           <option value="prelim">فحص أولي +60 يوم</option>
+          <option value="high-duration">تجاوز مدة متوقعة +50%</option>
         </select>
         <button class="btn btn-danger btn-sm" onclick="ExecReports.printCritical()">🖨️ طباعة القائمة</button>
       </div>
     </div>
-    <p style="color:var(--text-secondary); font-size:0.86rem; margin-bottom:12px;">القائمة الحمراء لصانع القرار: المتوقفة + بلا تحديث +30 يوم + تجاوزت التزمين + فحص أولي +60 يوم.</p>
-    <div id="exec-critical-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد جميع التقارير" لعرض النتائج</div></div>
+    <div id="exec-alerts-summary" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px;"></div>
+    <div id="exec-critical-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد اللوحة" لعرض النتائج</div></div>
   </div>
 
-  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #10b981;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
-      <h3 style="margin:0;">📈 مؤشر الإنتاجية الشهرية للفروع</h3>
-      <button class="btn btn-success btn-sm" onclick="ExecReports.exportProductivity()">📊 تصدير Excel</button>
-    </div>
-    <p style="color:var(--text-secondary); font-size:0.86rem; margin-bottom:12px;">كم أنجز كل فرع هذا الشهر؟ كم أطلق؟ معدل السرعة والفجوة بين المخطط والفعلي.</p>
-    <div id="exec-productivity-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد جميع التقارير" لعرض النتائج</div></div>
-  </div>
-
-  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #7c3aed;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
-      <h3 style="margin:0;">🏆 بطاقة الأداء المقارنة بين الفروع</h3>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <span style="font-size:0.83rem; color:var(--text-secondary);">تُحدث تلقائياً عند توليد التقارير</span>
-        <button class="btn btn-sm" style="background:#7c3aed; color:#fff;" onclick="ExecReports.printScorecard()">🖨️ طباعة البطاقة</button>
+  <!-- ═══ أداء الجهات التنفيذية ═══ -->
+  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #185FA5;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+      <h3 style="margin:0; color:#1e40af;">🏢 أداء الجهات التنفيذية — جدول مقارن شامل</h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <span style="font-size:0.8rem; background:#d1fae5; color:#065f46; padding:3px 10px; border-radius:10px;">A ممتاز</span>
+        <span style="font-size:0.8rem; background:#dbeafe; color:#1e40af; padding:3px 10px; border-radius:10px;">B جيد</span>
+        <span style="font-size:0.8rem; background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:10px;">C متابعة</span>
+        <span style="font-size:0.8rem; background:#fee2e2; color:#991b1b; padding:3px 10px; border-radius:10px;">D حرج</span>
       </div>
     </div>
-    <p style="color:var(--text-secondary); font-size:0.86rem; margin-bottom:12px;">ترتيب الفروع بنقاط مرجحة (إنجاز + سرعة + انضباط التحديث). يخلق حافزاً تنافسياً بين الفروع.</p>
-    <div id="exec-scorecard-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد جميع التقارير" لعرض النتائج</div></div>
+    <div id="exec-health-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد اللوحة" لعرض النتائج</div></div>
   </div>
 
+  <!-- ═══ الإنتاجية الشهرية ═══ -->
+  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #10b981;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+      <h3 style="margin:0; color:#065f46;">📈 مؤشر الإنتاجية الشهرية للفروع</h3>
+      <button class="btn btn-success btn-sm" onclick="ExecReports.exportProductivity()">📊 تصدير Excel</button>
+    </div>
+    <div id="exec-productivity-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد اللوحة" لعرض النتائج</div></div>
+  </div>
+
+  <!-- ═══ بطاقة الأداء ═══ -->
+  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #7c3aed;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+      <h3 style="margin:0; color:#4c1d95;">🏆 بطاقة الأداء المقارنة بين الفروع</h3>
+      <button class="btn btn-sm" style="background:#7c3aed; color:#fff;" onclick="ExecReports.printScorecard()">🖨️ طباعة البطاقة</button>
+    </div>
+    <div id="exec-scorecard-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد اللوحة" لعرض النتائج</div></div>
+  </div>
+
+  <!-- ═══ التحليلات المتقدمة ═══ -->
+  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #0891b2; background:linear-gradient(135deg,#fff 0%,#f0fdfa 100%);">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+      <h3 style="margin:0; color:#0e7490;">🔬 التحليلات المتقدمة — Branch Analytics</h3>
+      <button class="btn btn-sm" style="background:#0891b2;color:#fff;" onclick="ExecReports.printAdvancedAnalytics()">🖨️ طباعة</button>
+    </div>
+    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:12px;">مؤشر إنتاجية الفرع (BPI) — سرعة التنفيذ (قيمة/يوم) — منحنى التعلم — ثقة التنبؤ</p>
+    <div id="exec-advanced-analytics"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد اللوحة" لعرض النتائج</div></div>
+  </div>
+
+  <!-- ═══ دقة التنبؤ (MAPE/MAE/RMSE) ═══ -->
+  <div class="report-card" style="margin-bottom:18px; border-right:4px solid #d97706; background:linear-gradient(135deg,#fff 0%,#fffbeb 100%);">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+      <h3 style="margin:0; color:#92400e;">🎯 دقة التنبؤ بالمدة — Prediction Accuracy</h3>
+      <span style="font-size:0.8rem; background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:10px;">MAPE / MAE / RMSE</span>
+    </div>
+    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:12px;">مقارنة المدد المتوقعة بالفعلية للمشاريع المنجزة — يقيس كفاءة نموذج الجدولة التاريخي</p>
+    <div id="exec-prediction-accuracy"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد اللوحة" لعرض النتائج</div></div>
+  </div>
+
+  <!-- ═══ الخلاصة التنفيذية ═══ -->
   <div class="report-card" style="border-right:4px solid #f59e0b;">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
       <h3 style="margin:0;">📄 الخلاصة التنفيذية للمدير العام</h3>
       <button class="btn btn-warning btn-sm" onclick="ExecReports.printExecutiveSummary()">🖨️ طباعة الخلاصة</button>
     </div>
-    <p style="color:var(--text-secondary); font-size:0.86rem; margin-bottom:12px;">ملخص واحد يضم أبرز المؤشرات + تنبيهات الفروع الحرجة + أفضل الفروع أداءً + توصيات تدخل فوري.</p>
-    <div id="exec-summary-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد جميع التقارير" لعرض النتائج</div></div>
+    <div id="exec-summary-results"><div style="text-align:center; color:var(--text-secondary); padding:24px;">اضغط "توليد اللوحة" لعرض النتائج</div></div>
   </div>
 </section>
 
@@ -21617,6 +21650,240 @@ function _saveSkillsDB() {
 }
 _loadSkillsDB();
 
+/* ═══════════════════════════════════════════════════════════════
+   📊 محرك الجدولة التاريخي — HistoricalSchedulingEngine
+   يستخدم بيانات المشاريع المنجزة لبناء نماذج إحصائية وتنبؤية
+   ═══════════════════════════════════════════════════════════════ */
+const HistoricalSchedulingEngine = (function() {
+    function _cleanCost(val) {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        let str = String(val);
+        ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'].forEach((a, i) => {
+            str = str.replace(new RegExp(a, 'g'), String(i));
+        });
+        return parseFloat(str.replace(/[^\d.]/g, '')) || 0;
+    }
+    function _isCompleted(p) {
+        const s = p.status || '';
+        return ['منجز','مكتمل','مسلم','مقفل','جاري الاقفال','جاري الإقفال'].some(k => s.includes(k));
+    }
+    function _isTechAdmin(p) {
+        return (p.executingEntity || '').includes('الإدارة الفنية');
+    }
+    function _buildDateIndex(db) {
+        const sortedTL = [...(db.timeline || [])].sort((a, b) => a.date.localeCompare(b.date));
+        const idx = new Map();
+        sortedTL.forEach(snap => {
+            (snap.projects || []).forEach(prj => {
+                const k = prj.projectNumber || prj.projectName;
+                if (!k) return;
+                if (!idx.has(k)) idx.set(k, { actualStart: null, actualEnd: null });
+                const entry = idx.get(k);
+                const sd = (prj.statusDate && String(prj.statusDate).trim())
+                    ? String(prj.statusDate).slice(0, 10) : snap.date;
+                const s = prj.status || '';
+                const isActive = s.includes('جاري') && !['الاقفال','الإقفال'].some(kw => s.includes(kw));
+                const isDone = ['منجز','مكتمل','مسلم','مقفل'].some(kw => s.includes(kw));
+                if (!entry.actualStart && isActive) entry.actualStart = sd;
+                if (!entry.actualEnd   && isDone)   entry.actualEnd   = sd;
+            });
+        });
+        return idx;
+    }
+    function _calcActualDuration(p, dateIdx) {
+        const k = p.projectNumber || p.projectName;
+        const dates = (dateIdx && k) ? dateIdx.get(k) : null;
+        const startStr = (dates && dates.actualStart) || p.planFrom;
+        const endStr   = (dates && dates.actualEnd)   || p.planTo;
+        if (!startStr || !endStr) return 0;
+        const a = new Date(startStr), b = new Date(endStr);
+        if (isNaN(a) || isNaN(b) || b <= a) return 0;
+        return Math.round((b - a) / 86400000);
+    }
+    function _getCompletedProjects(db) {
+        if (!db || !db.timeline || !db.timeline.length) return [];
+        const dateIdx = _buildDateIndex(db);
+        const uniqMap = new Map();
+        db.timeline.forEach(snap => {
+            (snap.projects || []).forEach(p => {
+                if (!_isCompleted(p) || _isTechAdmin(p)) return;
+                const k = p.projectNumber || p.projectName;
+                if (!k) return;
+                if (!uniqMap.has(k) || uniqMap.get(k)._sd < snap.date)
+                    uniqMap.set(k, { ...p, _sd: snap.date });
+            });
+        });
+        return [...uniqMap.values()].map(p => {
+            const dur = _calcActualDuration(p, dateIdx);
+            const cost = _cleanCost(p.contractValue || p.cost);
+            return { ...p, _actualDur: dur, _cost: cost };
+        }).filter(p => p._actualDur >= 14 && p._actualDur <= 3000);
+    }
+    function _stats(values) {
+        if (!values.length) return { mean: 0, median: 0, stddev: 0, q1: 0, q3: 0, n: 0 };
+        const sorted = [...values].sort((a, b) => a - b);
+        const n = sorted.length;
+        const q1 = sorted[Math.floor(n * 0.25)];
+        const q3 = sorted[Math.floor(n * 0.75)];
+        const iqr = q3 - q1;
+        const filtered = sorted.filter(v => v >= q1 - 1.5 * iqr && v <= q3 + 1.5 * iqr);
+        const mean = filtered.reduce((s, v) => s + v, 0) / (filtered.length || 1);
+        const mid = Math.floor(n / 2);
+        const median = n % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+        const variance = filtered.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / (filtered.length || 1);
+        const stddev = Math.sqrt(variance);
+        return { mean: Math.round(mean), median: Math.round(median), stddev: Math.round(stddev), q1, q3, iqr, n, rawN: values.length };
+    }
+    function _linearRegression(points) {
+        const n = points.length;
+        if (n < 3) return null;
+        const sumX  = points.reduce((s, p) => s + p.x, 0);
+        const sumY  = points.reduce((s, p) => s + p.y, 0);
+        const sumXY = points.reduce((s, p) => s + p.x * p.y, 0);
+        const sumX2 = points.reduce((s, p) => s + p.x * p.x, 0);
+        const denom = n * sumX2 - sumX * sumX;
+        if (Math.abs(denom) < 1e-9) return null;
+        const a = (n * sumXY - sumX * sumY) / denom;
+        const b = (sumY - a * sumX) / n;
+        const meanY = sumY / n;
+        const ssTot = points.reduce((s, p) => s + Math.pow(p.y - meanY, 2), 0);
+        const ssRes = points.reduce((s, p) => s + Math.pow(p.y - (a * p.x + b), 2), 0);
+        const r2 = ssTot > 0 ? Math.max(0, 1 - ssRes / ssTot) : 0;
+        return { a, b, r2, n, meanY: Math.round(meanY) };
+    }
+    function _calcAccuracyMetrics(predicted, actual) {
+        const n = predicted.length;
+        if (!n) return null;
+        const mae  = predicted.reduce((s, p, i) => s + Math.abs(p - actual[i]), 0) / n;
+        const rmse = Math.sqrt(predicted.reduce((s, p, i) => s + Math.pow(p - actual[i], 2), 0) / n);
+        let mapeSum = 0, mapeN = 0;
+        predicted.forEach((p, i) => { if (actual[i] > 0) { mapeSum += Math.abs(p - actual[i]) / actual[i]; mapeN++; } });
+        const mape = mapeN > 0 ? (mapeSum / mapeN) * 100 : 0;
+        return { mae: Math.round(mae), rmse: Math.round(rmse), mape: Math.round(mape * 10) / 10, n };
+    }
+
+    function buildModel() {
+        const db = (typeof projectsDatabase !== 'undefined') ? projectsDatabase : null;
+        if (!db) return null;
+        const completed = _getCompletedProjects(db);
+        if (!completed.length) return null;
+
+        const allDurs = completed.map(p => p._actualDur).filter(d => d > 0);
+        const globalStats = _stats(allDurs);
+
+        const byType = {};
+        completed.forEach(p => {
+            const t = (p.projectType || 'غير محدد').trim();
+            if (!byType[t]) byType[t] = [];
+            byType[t].push(p);
+        });
+        const typeStats = {};
+        Object.entries(byType).forEach(([t, projs]) => {
+            const durs = projs.map(p => p._actualDur).filter(d => d > 0);
+            const costProjs = projs.filter(p => p._cost > 10000 && p._actualDur > 0);
+            const st = _stats(durs);
+            const regression = costProjs.length >= 3
+                ? _linearRegression(costProjs.map(p => ({ x: p._cost, y: p._actualDur })))
+                : null;
+            const sorted = projs.filter(p => p._actualDur > 0)
+                .sort((a, b) => (a._sd || '').localeCompare(b._sd || ''));
+            const learningSlope = sorted.length >= 4
+                ? _linearRegression(sorted.map((p, i) => ({ x: i, y: p._actualDur })))
+                : null;
+            const confidence = durs.length >= 10 ? 'high' : durs.length >= 4 ? 'medium' : 'low';
+            typeStats[t] = { ...st, n: durs.length, regression, learningSlope, confidence };
+        });
+
+        const byBranch = {};
+        completed.forEach(p => {
+            const b = p.executingEntity || 'غير محدد';
+            if (!byBranch[b]) byBranch[b] = [];
+            byBranch[b].push(p);
+        });
+        const branchStats = {};
+        Object.entries(byBranch).forEach(([b, projs]) => {
+            const durs = projs.map(p => p._actualDur).filter(d => d > 0);
+            const st = _stats(durs);
+            const sorted = projs.filter(p => p._actualDur > 0)
+                .sort((a, b) => (a._sd || '').localeCompare(b._sd || ''));
+            const learningSlope = sorted.length >= 4
+                ? _linearRegression(sorted.map((p, i) => ({ x: i, y: p._actualDur })))
+                : null;
+            const totalDays = durs.reduce((s, d) => s + d, 0);
+            const totalCost = projs.filter(p => p._cost > 0).reduce((s, p) => s + p._cost, 0);
+            const execSpeed = totalDays > 0 ? Math.round(totalCost / totalDays) : 0;
+            const bpi = globalStats.median > 0 && st.median > 0
+                ? Math.round((globalStats.median / st.median) * 100) / 100 : 1;
+            branchStats[b] = { ...st, n: durs.length, learningSlope, bpi, execSpeed };
+        });
+
+        const costPoints = completed.filter(p => p._cost > 10000 && p._actualDur > 0)
+            .map(p => ({ x: p._cost, y: p._actualDur }));
+        const globalRegression = costPoints.length >= 3 ? _linearRegression(costPoints) : null;
+
+        const predVsActual = completed.filter(p => p._cost > 10000 && p._actualDur > 0).map(p => {
+            const t = (p.projectType || 'غير محدد').trim();
+            const ts = typeStats[t];
+            let predicted = 0;
+            if (ts && ts.regression && ts.regression.r2 > 0.2 && p._cost > 10000)
+                predicted = Math.max(14, Math.round(ts.regression.a * p._cost + ts.regression.b));
+            else if (ts && ts.median > 0)
+                predicted = ts.median;
+            else if (globalRegression && globalRegression.r2 > 0.2)
+                predicted = Math.max(14, Math.round(globalRegression.a * p._cost + globalRegression.b));
+            else
+                predicted = globalStats.median;
+            return { predicted: Math.max(14, predicted), actual: p._actualDur };
+        });
+        const accuracy = predVsActual.length >= 3
+            ? _calcAccuracyMetrics(predVsActual.map(r => r.predicted), predVsActual.map(r => r.actual))
+            : null;
+
+        return { totalCompleted: completed.length, globalStats, typeStats, branchStats, globalRegression, accuracy, generatedAt: new Date().toISOString() };
+    }
+
+    function predictDurationByType(projectType, costValue) {
+        const db = (typeof projectsDatabase !== 'undefined') ? projectsDatabase : null;
+        if (!db || !db.timeline || !db.timeline.length) return 0;
+        const model = buildModel();
+        if (!model) return 0;
+        const type = (projectType || '').trim();
+        let ts = model.typeStats[type];
+        if (!ts) {
+            const matchKey = Object.keys(model.typeStats).find(k => k.includes(type) || type.includes(k));
+            if (matchKey) ts = model.typeStats[matchKey];
+        }
+        const cost = typeof costValue === 'number' ? costValue : _cleanCost(costValue);
+        if (ts && ts.regression && ts.regression.r2 > 0.2 && cost > 10000)
+            return Math.max(30, Math.round(ts.regression.a * cost + ts.regression.b));
+        if (ts && ts.median > 0) return ts.median;
+        if (model.globalRegression && model.globalRegression.r2 > 0.2 && cost > 10000)
+            return Math.max(30, Math.round(model.globalRegression.a * cost + model.globalRegression.b));
+        if (model.globalStats.median > 0) return model.globalStats.median;
+        return 0;
+    }
+
+    function predictDuration(project) {
+        if (!project) return 0;
+        const cost = _cleanCost(project.contractValue || project.cost);
+        return predictDurationByType(project.projectType, cost);
+    }
+
+    function getBranchProductivityIndex(branch) {
+        const db = (typeof projectsDatabase !== 'undefined') ? projectsDatabase : null;
+        if (!db) return 1;
+        const model = buildModel();
+        if (!model || !model.branchStats[branch]) return 1;
+        return model.branchStats[branch].bpi || 1;
+    }
+
+    function getFullModel() { return buildModel(); }
+
+    return { predictDuration, predictDurationByType, getBranchProductivityIndex, getFullModel };
+})();
+window.HistoricalSchedulingEngine = HistoricalSchedulingEngine;
+
 const AutoScheduling = {
 
     // --- معايير المدة القياسية لكل نوع مشروع (بالأيام) ---
@@ -21633,8 +21900,14 @@ const AutoScheduling = {
     },
     _defaultStandardDuration: 180,
 
-    // --- استرجاع المدة القياسية لنوع مشروع ---
-    _getStandardDuration(projectType) {
+    // --- استرجاع المدة لنوع مشروع (محرك تاريخي أولاً ثم جداول ثابتة) ---
+    _getStandardDuration(projectType, costValue) {
+        // 1) المحرك التاريخي — أولوية قصوى
+        if (typeof HistoricalSchedulingEngine !== 'undefined') {
+            const histDur = HistoricalSchedulingEngine.predictDurationByType(projectType, costValue || 0);
+            if (histDur > 0) return histDur;
+        }
+        // 2) الجداول الثابتة — احتياطي
         const type = (projectType || '').trim();
         for (const key of Object.keys(this._standardDurations)) {
             if (type.includes(key) || key.includes(type)) {
@@ -29151,6 +29424,21 @@ const CapacityScheduler = (function() {
     return Math.max(1,maxP);
   }
 
+  // ─── نموذج الطاقة المرجّحة — يأخذ نسبة الإنجاز كمعامل تخفيف للحمل ───
+  // الوزن: 0-20%→1.0, 20-40%→0.9, 40-60%→0.7, 60-80%→0.4, 80-100%→0.1
+  function _calcWeightedLoad(projects) {
+    return projects.reduce((sum, p) => {
+      const prog = _getTotalProgress(p);
+      let w;
+      if      (prog >= 80) w = 0.1;
+      else if (prog >= 60) w = 0.4;
+      else if (prog >= 40) w = 0.7;
+      else if (prog >= 20) w = 0.9;
+      else                 w = 1.0;
+      return sum + w;
+    }, 0);
+  }
+
   function loadTypeConfigFromData() {
     const ps=_getProjects();
     if (!ps.length) { _notify('يرجى تحميل البيانات أولاً','warning'); return; }
@@ -29247,7 +29535,7 @@ const CapacityScheduler = (function() {
       });
       const ongoingAll=_getProjects().filter(p=>(p.executingEntity||'غير محدد')===b&&_isInProgress(p)&&(_typeConfig[p.projectType]||'branch')!=='exclude');
       const highProg=ongoingAll.filter(p=>_getTotalProgress(p)>=80);
-      const load=ongoing.reduce((s,p)=>s+SIZE_W[_classifySize(p)],0);
+      const load = _calcWeightedLoad(ongoing);
       const histParallel=_analyzeParallelFromHistory(db,b,cutoff,_dateIdx);
       cap[b]={monthlyUnits:monthly,avgDur,ongoingCount:ongoing.length,ongoingAll:ongoingAll.length,highProgCount:highProg.length,ongoingLoad:load,available:Math.max(0,monthly-load),completedCount:d.comp.length,_estimated:!d.comp.length,histParallel,_costModel};
     });
@@ -29519,7 +29807,8 @@ const CapacityScheduler = (function() {
    📋 تقارير الإدارة العليا — ExecReports
    ═══════════════════════════════════════════════════════════════ */
 const ExecReports = (function() {
-  let _currentData = { health:[], critical:[], productivity:[], scorecard:[] };
+  let _currentData = { health:[], critical:[], productivity:[], scorecard:[], advanced:null };
+
   function _getData() {
     if (typeof projectsDatabase !== 'undefined' && projectsDatabase && Array.isArray(projectsDatabase.timeline)) return projectsDatabase;
     return null;
@@ -29530,9 +29819,11 @@ const ExecReports = (function() {
     const snap=(db.timeline||[]).find(s=>s.date===dateStr);
     return snap?snap.projects:[];
   }
-  function _isCompleted(p){const s=p.status||'';return['منجز','مكتمل','مسلم','مقفل'].some(k=>s.includes(k));}
+  function _isCompleted(p){const s=p.status||'';return['منجز','مكتمل','مسلم','مقفل','جاري الاقفال','جاري الإقفال'].some(k=>s.includes(k));}
   function _isNotStarted(p){const s=p.status||'';return s.includes('لم يبدأ')||s.includes('لم يبداء');}
   function _isInProgress(p){if(_isCompleted(p))return false;return(p.status||'').includes('جاري');}
+  function _isVip(p){return(p.projectType||'').toLowerCase().includes('vip');}
+  function _isTechAdmin(p){return(p.executingEntity||'').includes('الإدارة الفنية');}
   function _isStalled(p,prevPs){
     if(!_isInProgress(p))return false;
     const prev=prevPs.find(q=>(q.projectNumber&&q.projectNumber===p.projectNumber)||(q.projectName===p.projectName&&q.executingEntity===p.executingEntity));
@@ -29543,6 +29834,13 @@ const ExecReports = (function() {
   }
   function _daysSince(dateStr){if(!dateStr)return 999;return Math.round((Date.now()-new Date(dateStr))/86400000);}
   function _getProgress(p){return Math.max(Number(p.civilProgress||0),Number(p.technicalProgress||0));}
+  function _cleanCostLocal(val){
+    if(!val)return 0; if(typeof val==='number')return val;
+    let s=String(val); ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'].forEach((a,i)=>{s=s.replace(new RegExp(a,'g'),String(i));});
+    return parseFloat(s.replace(/[^\d.]/g,''))||0;
+  }
+  function _fmtM(v){if(!v)return'—';if(v>=1e9)return(v/1e9).toFixed(1)+'م.ر.ي';if(v>=1e6)return(v/1e6).toFixed(1)+'م';if(v>=1e3)return(v/1e3).toFixed(0)+'ألف';return v;}
+
   function onDateChange() {
     const db=_getData(); if(!db) return;
     const cur=document.getElementById('exec-date-current')?.value||'';
@@ -29554,13 +29852,13 @@ const ExecReports = (function() {
     const db=_getData(); if(!db) return;
     const dates=(db.timeline||[]).map(s=>s.date).sort().reverse();
     const curEl=document.getElementById('exec-date-current');
-    const prevEl=document.getElementById('exec-date-prev');
     const brEl=document.getElementById('exec-branch-filter');
     if (curEl) { curEl.innerHTML='<option value="">-- اختر --</option>'+dates.map(d=>`<option>${d}</option>`).join(''); if(dates.length)curEl.value=dates[0]; onDateChange(); }
     const ps=_getSnap('');
     const branches=[...new Set(ps.map(p=>p.executingEntity||'').filter(Boolean))].sort();
-    if (brEl) brEl.innerHTML='<option value="">جميع الفروع</option>'+branches.map(b=>`<option>${b}</option>`).join('');
+    if (brEl) brEl.innerHTML='<option value="">جميع الجهات</option>'+branches.map(b=>`<option>${b}</option>`).join('');
   }
+
   function generateAll() {
     _initFilters();
     const curDate=document.getElementById('exec-date-current')?.value||'';
@@ -29569,10 +29867,60 @@ const ExecReports = (function() {
     if (!curDate) { _notify('يرجى اختيار التاريخ الحالي','warning'); return; }
     const curPs=_getSnap(curDate).filter(p=>!branchF||p.executingEntity===branchF);
     const prevPs=prevDate?_getSnap(prevDate).filter(p=>!branchF||p.executingEntity===branchF):[];
-    _genHealth(curPs,prevPs); _genCritical(curPs,prevPs,curDate);
-    _genProductivity(curPs,prevPs); _genScorecard(curPs,prevPs); _genSummary(curPs,prevPs,curDate);
-    _notify('✅ تم توليد جميع التقارير','success');
+    _genKpiGrid(curPs,prevPs,curDate);
+    _genHealth(curPs,prevPs);
+    _genCritical(curPs,prevPs,curDate);
+    _genProductivity(curPs,prevPs);
+    _genScorecard(curPs,prevPs);
+    _genAdvancedAnalytics(curPs,prevPs,curDate);
+    _genPredictionAccuracy();
+    _genSummary(curPs,prevPs,curDate);
+    _notify('✅ تم توليد لوحة القيادة التنفيذية','success');
   }
+
+  // ─── KPI Grid ─────────────────────────────────────────────────
+  function _genKpiGrid(curPs,prevPs,curDate) {
+    const total=curPs.length;
+    const completed=curPs.filter(_isCompleted).length;
+    const ongoing=curPs.filter(_isInProgress).length;
+    const notStarted=curPs.filter(_isNotStarted).length;
+    const stalled=prevPs.length?curPs.filter(p=>_isStalled(p,prevPs)).length:0;
+    const noUpdate30=curPs.filter(p=>_isInProgress(p)&&_daysSince(p.statusDate)>30).length;
+    const overTimeline=curPs.filter(p=>_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date(curDate)&&_getProgress(p)<90).length;
+    const near90=curPs.filter(p=>_isInProgress(p)&&_getProgress(p)>=90).length;
+    const vipCount=curPs.filter(_isVip).length;
+    const vipNotStarted=curPs.filter(p=>_isVip(p)&&_isNotStarted(p)).length;
+    const techAdmin=curPs.filter(_isTechAdmin).length;
+    const completionRate=total?Math.round(completed/total*100):0;
+    const avgProgress=curPs.length?Math.round(curPs.reduce((s,p)=>s+_getProgress(p),0)/curPs.length):0;
+    const totalContractValue=curPs.reduce((s,p)=>s+_cleanCostLocal(p.contractValue||p.cost),0);
+
+    const kpis=[
+      {icon:'📁',v:total,l:'إجمالي المشاريع',c:'#1e40af',bg:'#dbeafe',border:'#3b82f6'},
+      {icon:'✅',v:completed,l:'منجزة',c:'#065f46',bg:'#d1fae5',border:'#10b981'},
+      {icon:'⚙️',v:ongoing,l:'جارية',c:'#92400e',bg:'#fef3c7',border:'#f59e0b'},
+      {icon:'🕐',v:notStarted,l:'لم تبدأ بعد',c:'#4c1d95',bg:'#ede9fe',border:'#7c3aed'},
+      {icon:'⏸️',v:stalled,l:'متوقفة (مقارنة)',c:'#991b1b',bg:'#fee2e2',border:'#ef4444'},
+      {icon:'⏱️',v:noUpdate30,l:'بدون تحديث >30 يوم',c:'#92400e',bg:'#fff7ed',border:'#f97316'},
+      {icon:'📅',v:overTimeline,l:'تجاوزت التزمين',c:'#1d4ed8',bg:'#eff6ff',border:'#2563eb'},
+      {icon:'🔔',v:near90,l:'إنجاز ≥90% (قريبة)',c:'#065f46',bg:'#f0fdf4',border:'#22c55e'},
+      {icon:'⭐',v:vipCount,l:'مشاريع VIP',c:'#7c3aed',bg:'#faf5ff',border:'#8b5cf6'},
+      {icon:'🔴',v:vipNotStarted,l:'VIP لم تبدأ',c:'#991b1b',bg:'#fff1f2',border:'#f43f5e'},
+      {icon:'📊',v:completionRate+'%',l:'معدل الإنجاز الكلي',c:'#0e7490',bg:'#ecfeff',border:'#06b6d4'},
+      {icon:'📈',v:avgProgress+'%',l:'متوسط التقدم',c:'#7e22ce',bg:'#fdf4ff',border:'#a855f7'},
+    ];
+    if (totalContractValue>0) kpis.push({icon:'💰',v:_fmtM(totalContractValue),l:'إجمالي القيمة التعاقدية',c:'#064e3b',bg:'#ecfdf5',border:'#10b981'});
+    if (techAdmin>0) kpis.push({icon:'🏛️',v:techAdmin,l:'الإدارة الفنية',c:'#374151',bg:'#f9fafb',border:'#9ca3af'});
+
+    document.getElementById('exec-kpi-grid').innerHTML = kpis.map(k=>`
+      <div style="text-align:center;padding:18px 10px;background:${k.bg};border-radius:14px;border:1px solid ${k.border}44;transition:all 0.2s;cursor:default;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px ${k.border}33'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="font-size:1.8rem;line-height:1;">${k.icon}</div>
+        <div style="font-size:1.65rem;font-weight:900;color:${k.c};margin:6px 0 4px;">${k.v}</div>
+        <div style="font-size:0.75rem;font-weight:600;color:${k.c};opacity:0.85;">${k.l}</div>
+      </div>`).join('');
+  }
+
+  // ─── Health Report ─────────────────────────────────────────────
   function _genHealth(curPs,prevPs) {
     const branches=[...new Set(curPs.map(p=>p.executingEntity||'').filter(Boolean))].sort();
     const health=branches.map(b=>{
@@ -29586,58 +29934,107 @@ const ExecReports = (function() {
       const noUpdatePct=Math.round(noUpdate/Math.max(ongoing,1)*100);
       const completed=bp.filter(_isCompleted).length;
       const completionRate=Math.round(completed/total*100);
+      const notStarted=bp.filter(_isNotStarted).length;
+      const overTL=bp.filter(p=>_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date()).length;
       let score=100; score-=stalledPct*0.4; score-=noUpdatePct*0.3; score-=Math.max(0,50-completionRate)*0.3;
       score=Math.max(0,Math.round(score));
       const grade=score>=80?'A':score>=60?'B':score>=40?'C':'D';
       const gradeColor={A:'#065f46',B:'#1e40af',C:'#92400e',D:'#991b1b'};
       const gradeBg={A:'#d1fae5',B:'#dbeafe',C:'#fef3c7',D:'#fee2e2'};
-      return {b,total,ongoing,stalled,stalledPct,noUpdate,noUpdatePct,completed,completionRate,score,grade,gradeColor:gradeColor[grade],gradeBg:gradeBg[grade]};
+      return {b,total,ongoing,stalled,stalledPct,noUpdate,noUpdatePct,completed,completionRate,notStarted,overTL,score,grade,gradeColor:gradeColor[grade],gradeBg:gradeBg[grade]};
     });
     _currentData.health=health;
     document.getElementById('exec-health-results').innerHTML=`
       <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--gray-light);">
         <table class="styled-report-table">
-          <thead><tr><th>الفرع</th><th>درجة الصحة</th><th>التقييم</th><th>إجمالي</th><th>جارية</th><th>متوقفة</th><th>بلا تحديث +30</th><th>منجزة %</th><th>النقاط</th></tr></thead>
+          <thead><tr><th>الجهة</th><th>درجة</th><th>التقييم</th><th>إجمالي</th><th>جارية</th><th>متوقفة</th><th>بلا تحديث +30</th><th>تجاوز تزمين</th><th>منجزة %</th><th>لم تبدأ</th><th>النقاط</th></tr></thead>
           <tbody>${health.sort((a,b)=>b.score-a.score).map(h=>`<tr>
             <td style="text-align:right;font-weight:600;">${h.b}</td>
             <td><span style="background:${h.gradeBg};color:${h.gradeColor};padding:4px 14px;border-radius:20px;font-size:1.1rem;font-weight:900;">${h.grade}</span></td>
-            <td style="font-size:0.82rem;">${h.grade==='A'?'✅ ممتاز':h.grade==='B'?'👍 جيد':h.grade==='C'?'⚠️ يحتاج متابعة':'🚨 حرج'}</td>
+            <td style="font-size:0.82rem;">${h.grade==='A'?'✅ ممتاز':h.grade==='B'?'👍 جيد':h.grade==='C'?'⚠️ متابعة':'🚨 حرج'}</td>
             <td>${h.total}</td><td>${h.ongoing}</td>
-            <td><span style="color:${h.stalledPct>30?'#ef4444':'inherit'};font-weight:${h.stalledPct>30?700:400};">${h.stalled} (${h.stalledPct}%)</span></td>
-            <td><span style="color:${h.noUpdatePct>30?'#ef4444':'inherit'};font-weight:${h.noUpdatePct>30?700:400};">${h.noUpdate} (${h.noUpdatePct}%)</span></td>
-            <td>${h.completionRate}%</td><td><strong>${h.score}</strong>/100</td>
+            <td><span style="color:${h.stalledPct>30?'#ef4444':'inherit'};font-weight:${h.stalledPct>30?700:400};">${h.stalled}(${h.stalledPct}%)</span></td>
+            <td><span style="color:${h.noUpdatePct>30?'#ef4444':'inherit'};font-weight:${h.noUpdatePct>30?700:400};">${h.noUpdate}(${h.noUpdatePct}%)</span></td>
+            <td><span style="color:${h.overTL>0?'#dc2626':'inherit'};font-weight:${h.overTL>0?700:400};">${h.overTL}</span></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><div style="flex:1;background:#e2e8f0;border-radius:10px;height:7px;overflow:hidden;"><div style="height:100%;background:#10b981;width:${h.completionRate}%;border-radius:10px;"></div></div>${h.completionRate}%</div></td>
+            <td>${h.notStarted}</td>
+            <td><strong style="color:${h.score>=80?'#065f46':h.score>=60?'#1e40af':h.score>=40?'#92400e':'#991b1b'};">${h.score}</strong>/100</td>
           </tr>`).join('')}</tbody>
         </table>
       </div>`;
   }
+
+  // ─── Critical / Red List ───────────────────────────────────────
   function _genCritical(curPs,prevPs,curDate) {
     const critical=[];
+    // الحصول على نموذج التنبؤ إن وُجد
+    const histModel = (typeof HistoricalSchedulingEngine!=='undefined') ? HistoricalSchedulingEngine.getFullModel() : null;
+
     curPs.forEach(p=>{
       const reasons=[]; const days=_daysSince(p.statusDate||curDate);
-      if (_isInProgress(p)&&prevPs.length&&_isStalled(p,prevPs)) reasons.push({type:'stalled',label:'متوقف',desc:`لا تحديث منذ الرصد السابق`,icon:'⏸️',cls:'#991b1b'});
-      if (_isInProgress(p)&&days>30) reasons.push({type:'no-update',label:'بلا تحديث',desc:`${days} يوم بدون تحديث`,icon:'⏱️',cls:'#92400e'});
-      if (_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date(curDate)&&_getProgress(p)<90) reasons.push({type:'over-timeline',label:'تجاوز التزمين',desc:`انتهى ${_daysSince(p.planTo)} يوم مضى`,icon:'📅',cls:'#1e40af'});
+      if (_isInProgress(p)&&prevPs.length&&_isStalled(p,prevPs))
+        reasons.push({type:'stalled',label:'متوقف',desc:'لا تحديث منذ الرصد السابق',icon:'⏸️',cls:'#991b1b'});
+      if (_isInProgress(p)&&days>30)
+        reasons.push({type:'no-update',label:'بلا تحديث',desc:`${days} يوم بدون تحديث`,icon:'⏱️',cls:'#92400e'});
+      if (_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date(curDate)&&_getProgress(p)<90)
+        reasons.push({type:'over-timeline',label:'تجاوز التزمين',desc:`انتهى منذ ${_daysSince(p.planTo)} يوم`,icon:'📅',cls:'#1e40af'});
       const s=(p.status||'');
-      if ((s.includes('فحص أولي')||s.includes('تسليم ملفات'))&&days>60) reasons.push({type:'prelim',label:'فحص أولي طويل',desc:`${days} يوم في مرحلة الفحص`,icon:'📋',cls:'#4c1d95'});
+      if ((s.includes('فحص أولي')||s.includes('تسليم ملفات'))&&days>60)
+        reasons.push({type:'prelim',label:'فحص أولي طويل',desc:`${days} يوم في مرحلة الفحص`,icon:'📋',cls:'#4c1d95'});
+      // تجاوز المدة المتوقعة بأكثر من 50%
+      if (histModel && _isInProgress(p) && p.planFrom) {
+        const predictedDur = (typeof HistoricalSchedulingEngine!=='undefined')
+          ? HistoricalSchedulingEngine.predictDuration(p) : 0;
+        if (predictedDur > 0) {
+          const elapsed = _daysSince(p.planFrom);
+          if (elapsed > predictedDur * 1.5)
+            reasons.push({type:'high-duration',label:'مدة مطولة',desc:`${elapsed} يوم (متوقع: ${predictedDur})`,icon:'📊',cls:'#0369a1'});
+        }
+      }
       if (reasons.length) critical.push({...p,reasons,_mainReason:reasons[0]});
     });
     critical.sort((a,b)=>b.reasons.length-a.reasons.length);
-    _currentData.critical=critical; _renderCritical(critical);
+    _currentData.critical=critical;
+
+    // تحديث بطاقات الملخص في exec-alerts-summary
+    const alertCounts={stalled:0,'no-update':0,'over-timeline':0,prelim:0,'high-duration':0};
+    critical.forEach(p=>p.reasons.forEach(r=>{ if(alertCounts[r.type]!==undefined) alertCounts[r.type]++; }));
+    const alertDefs=[
+      {type:'stalled',icon:'⏸️',l:'متوقفة',c:'#991b1b',bg:'#fee2e2'},
+      {type:'no-update',icon:'⏱️',l:'بلا تحديث >30 يوم',c:'#92400e',bg:'#fef3c7'},
+      {type:'over-timeline',icon:'📅',l:'تجاوزت التزمين',c:'#1d4ed8',bg:'#eff6ff'},
+      {type:'prelim',icon:'📋',l:'فحص أولي >60 يوم',c:'#4c1d95',bg:'#ede9fe'},
+      {type:'high-duration',icon:'📊',l:'مدة مطولة >150%',c:'#0369a1',bg:'#e0f2fe'},
+    ];
+    const asSummaryEl=document.getElementById('exec-alerts-summary');
+    if (asSummaryEl) {
+      asSummaryEl.innerHTML=alertDefs.map(a=>`
+        <div style="text-align:center;padding:14px 10px;background:${a.bg};border-radius:12px;border:1px solid ${a.c}33;cursor:pointer;"
+             onclick="document.getElementById('exec-critical-type').value='${a.type}';ExecReports.filterCritical()">
+          <div style="font-size:1.7rem;font-weight:900;color:${a.c};">${alertCounts[a.type]}</div>
+          <div style="font-size:0.75rem;font-weight:700;color:${a.c};margin-top:3px;">${a.icon} ${a.l}</div>
+        </div>`).join('');
+    }
+    _renderCritical(critical);
   }
   function _renderCritical(data) {
-    if (!data.length) { document.getElementById('exec-critical-results').innerHTML='<div style="text-align:center;padding:24px;color:#065f46;background:#d1fae5;border-radius:10px;font-weight:600;">✅ لا توجد مشاريع متعثرة أو حرجة</div>'; return; }
+    if (!data.length) {
+      document.getElementById('exec-critical-results').innerHTML='<div style="text-align:center;padding:24px;color:#065f46;background:#d1fae5;border-radius:10px;font-weight:600;">✅ لا توجد مشاريع متعثرة أو حرجة</div>';
+      return;
+    }
     document.getElementById('exec-critical-results').innerHTML=`
       <div style="margin-bottom:10px;font-size:0.85rem;color:var(--text-secondary);">${data.length} مشروع يحتاج تدخلاً</div>
       <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--gray-light);">
         <table class="styled-report-table">
-          <thead><tr><th>#</th><th>المشروع</th><th>الفرع</th><th>نوع التعثر</th><th>التفاصيل</th><th>الإنجاز</th></tr></thead>
+          <thead><tr><th>#</th><th>المشروع</th><th>الجهة</th><th>نوع التعثر</th><th>التفاصيل</th><th>الإنجاز</th><th>أسباب</th></tr></thead>
           <tbody>${data.map((p,i)=>`<tr style="background:${i%2===0?'#fff9f9':'#fff5f5'};">
             <td>${i+1}</td>
             <td style="text-align:right;"><div style="font-weight:600;font-size:0.88rem;">${p.projectName||'—'}</div><div style="font-size:0.75rem;color:var(--text-secondary);">${p.projectNumber||''}</div></td>
-            <td>${p.executingEntity||'—'}</td>
-            <td>${p.reasons.map(r=>`<span style="background:${r.cls}22;color:${r.cls};padding:2px 8px;border-radius:10px;font-size:0.77rem;font-weight:700;display:inline-block;margin:1px;">${r.icon} ${r.label}</span>`).join('')}</td>
+            <td style="font-size:0.83rem;">${p.executingEntity||'—'}</td>
+            <td>${p.reasons.map(r=>`<span style="background:${r.cls}22;color:${r.cls};padding:2px 8px;border-radius:10px;font-size:0.77rem;font-weight:700;display:inline-block;margin:1px;">${r.icon}${r.label}</span>`).join('')}</td>
             <td style="font-size:0.82rem;color:var(--text-secondary);">${p.reasons.map(r=>r.desc).join(' | ')}</td>
             <td><strong>${_getProgress(p)}%</strong></td>
+            <td><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:0.82rem;font-weight:700;">${p.reasons.length}</span></td>
           </tr>`).join('')}</tbody>
         </table>
       </div>`;
@@ -29647,6 +30044,8 @@ const ExecReports = (function() {
     const data=type==='all'?_currentData.critical:_currentData.critical.filter(p=>p.reasons.some(r=>r.type===type));
     _renderCritical(data);
   }
+
+  // ─── Productivity ──────────────────────────────────────────────
   function _genProductivity(curPs,prevPs) {
     const branches=[...new Set(curPs.map(p=>p.executingEntity||'').filter(Boolean))].sort();
     const prod=branches.map(b=>{
@@ -29654,28 +30053,33 @@ const ExecReports = (function() {
       const bpPrev=prevPs.filter(p=>p.executingEntity===b);
       const completed=bp.filter(_isCompleted).length;
       const prevCompleted=bpPrev.filter(_isCompleted).length;
-      const started=prevPs.length?bp.filter(p=>_isInProgress(p)&&!_isInProgress(bpPrev.find(q=>q.projectNumber===p.projectNumber||q.projectName===p.projectName)||({})||{})).length:0;
       const ongoing=bp.filter(_isInProgress).length;
       const notStarted=bp.filter(_isNotStarted).length;
+      const started=prevPs.length?bp.filter(p=>_isInProgress(p)&&!_isInProgress(bpPrev.find(q=>q.projectNumber===p.projectNumber||q.projectName===p.projectName)||({})||{})).length:0;
       const delta=completed-prevCompleted;
-      return {b,completed,prevCompleted,started,ongoing,notStarted,delta};
+      const avgProg=bp.length?Math.round(bp.reduce((s,p)=>s+_getProgress(p),0)/bp.length):0;
+      return {b,completed,prevCompleted,started,ongoing,notStarted,delta,avgProg};
     });
     _currentData.productivity=prod;
     const maxComp=Math.max(...prod.map(p=>p.completed),1);
     document.getElementById('exec-productivity-results').innerHTML=`
       <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--gray-light);">
         <table class="styled-report-table">
-          <thead><tr><th>الفرع</th><th>منجزة (كلي)</th><th>منجزة الفترة</th><th>انطلقت</th><th>جارية</th><th>بانتظار البدء</th><th>الاتجاه</th></tr></thead>
+          <thead><tr><th>الجهة</th><th>منجزة (كلي)</th><th>منجزة الفترة</th><th>انطلقت</th><th>جارية</th><th>متوسط التقدم</th><th>بانتظار البدء</th><th>الاتجاه</th></tr></thead>
           <tbody>${prod.sort((a,b)=>b.completed-a.completed).map(p=>`<tr>
             <td style="text-align:right;font-weight:600;">${p.b}</td>
             <td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;background:#e2e8f0;border-radius:10px;height:8px;overflow:hidden;"><div style="height:100%;background:#10b981;border-radius:10px;width:${Math.round(p.completed/maxComp*100)}%;"></div></div><strong>${p.completed}</strong></div></td>
-            <td><span style="background:${p.delta>0?'#d1fae5':'#f1f5f9'};color:${p.delta>0?'#065f46':'#475569'};padding:3px 10px;border-radius:10px;font-weight:700;">${p.delta>0?'+':''}${p.delta}</span></td>
-            <td>${p.started}</td><td>${p.ongoing}</td><td>${p.notStarted}</td>
+            <td><span style="background:${p.delta>0?'#d1fae5':p.delta<0?'#fee2e2':'#f1f5f9'};color:${p.delta>0?'#065f46':p.delta<0?'#991b1b':'#475569'};padding:3px 10px;border-radius:10px;font-weight:700;">${p.delta>0?'+':''}${p.delta}</span></td>
+            <td>${p.started}</td><td>${p.ongoing}</td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><div style="flex:1;background:#e2e8f0;border-radius:6px;height:7px;overflow:hidden;"><div style="height:100%;background:#3b82f6;width:${p.avgProg}%;border-radius:6px;"></div></div>${p.avgProg}%</div></td>
+            <td>${p.notStarted}</td>
             <td style="font-size:1.1rem;">${p.delta>0?'📈':p.delta<0?'📉':'➡️'}</td>
           </tr>`).join('')}</tbody>
         </table>
       </div>`;
   }
+
+  // ─── Scorecard ─────────────────────────────────────────────────
   function _genScorecard(curPs,prevPs) {
     const branches=[...new Set(curPs.map(p=>p.executingEntity||'').filter(Boolean))].sort();
     const scores=branches.map(b=>{
@@ -29693,26 +30097,193 @@ const ExecReports = (function() {
     });
     scores.sort((a,b)=>b.total_score-a.total_score); _currentData.scorecard=scores;
     const medals=['🥇','🥈','🥉'];
+    const _bar=(v,mx,c)=>`<div style="display:flex;align-items:center;gap:6px;"><div style="flex:1;background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;"><div style="height:100%;background:${c};width:${v/mx*100}%;border-radius:6px;"></div></div><strong>${v}</strong></div>`;
     document.getElementById('exec-scorecard-results').innerHTML=`
       <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--gray-light);">
         <table class="styled-report-table">
-          <thead><tr><th>الترتيب</th><th>الفرع</th><th>إنجاز (40)</th><th>سرعة (30)</th><th>تحديث (30)</th><th>المجموع (100)</th></tr></thead>
+          <thead><tr><th>الترتيب</th><th>الجهة</th><th>إنجاز(40)</th><th>سرعة(30)</th><th>تحديث(30)</th><th>المجموع(100)</th></tr></thead>
           <tbody>${scores.map((s,i)=>{
-            const barColor=s.total_score>=80?'#10b981':s.total_score>=60?'#3b82f6':s.total_score>=40?'#f59e0b':'#ef4444';
-            const _bar=(v,mx,c)=>`<div style="display:flex;align-items:center;gap:6px;"><div style="flex:1;background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;"><div style="height:100%;background:${c};width:${v/mx*100}%;border-radius:6px;"></div></div><strong>${v}</strong></div>`;
+            const bc=s.total_score>=80?'#10b981':s.total_score>=60?'#3b82f6':s.total_score>=40?'#f59e0b':'#ef4444';
             return `<tr style="background:${i===0?'#fffbeb':i===1?'#f0fdf4':i===2?'#eff6ff':''};">
               <td style="font-size:1.2rem;font-weight:700;">${medals[i]||i+1}</td>
               <td style="text-align:right;font-weight:600;">${s.b}</td>
               <td>${_bar(s.compScore,40,'#10b981')}</td>
               <td>${_bar(s.speed,30,'#3b82f6')}</td>
               <td>${_bar(s.update,30,'#8b5cf6')}</td>
-              <td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden;"><div style="height:100%;background:${barColor};width:${s.total_score}%;border-radius:6px;"></div></div><strong style="color:${barColor};font-size:1rem;">${s.total_score}</strong></div></td>
+              <td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden;"><div style="height:100%;background:${bc};width:${s.total_score}%;border-radius:6px;"></div></div><strong style="color:${bc};font-size:1rem;">${s.total_score}</strong></div></td>
             </tr>`;
           }).join('')}</tbody>
         </table>
       </div>`;
   }
-  function _isVip(p) { return (p.projectType||'').toLowerCase().includes('vip'); }
+
+  // ─── Advanced Analytics (BPI, Speed, Learning Curve, Confidence) ──
+  function _genAdvancedAnalytics(curPs,prevPs,curDate) {
+    const el=document.getElementById('exec-advanced-analytics'); if(!el) return;
+    const model=(typeof HistoricalSchedulingEngine!=='undefined')?HistoricalSchedulingEngine.getFullModel():null;
+    if (!model) {
+      el.innerHTML='<div style="padding:14px;background:#fef3c7;border-radius:8px;color:#92400e;font-size:0.87rem;">⚠️ لا توجد بيانات تاريخية كافية — يحتاج مشاريع منجزة في السجل الزمني (مستثنياً الإدارة الفنية)</div>';
+      return;
+    }
+    _currentData.advanced=model;
+    const branches=Object.keys(model.branchStats).sort();
+    if (!branches.length) {
+      el.innerHTML='<div style="padding:14px;background:#fef3c7;border-radius:8px;color:#92400e;font-size:0.85rem;">⚠️ بيانات غير كافية لحساب التحليلات المتقدمة</div>';
+      return;
+    }
+
+    // جدول BPI وسرعة التنفيذ
+    const bpiRows=branches.map(b=>{
+      const st=model.branchStats[b];
+      const bpi=st.bpi||1;
+      const bpiColor=bpi>=1.2?'#065f46':bpi>=0.8?'#1e40af':'#991b1b';
+      const bpiBg=bpi>=1.2?'#d1fae5':bpi>=0.8?'#dbeafe':'#fee2e2';
+      const bpiLabel=bpi>=1.2?'▲ أسرع من المعدل':bpi>=0.8?'= معدل طبيعي':'▼ أبطأ من المعدل';
+      const learnSlope=st.learningSlope;
+      const learning=learnSlope?
+        (learnSlope.a<-0.5?'📉 تحسُّن مستمر':learnSlope.a>0.5?'📈 تراجع تدريجي':'➡️ مستقر'):'—';
+      const confLabel=st.n>=10?'🟢 عالية':st.n>=4?'🟡 متوسطة':'🔴 محدودة';
+      const speedFmt=st.execSpeed>0?_fmtM(st.execSpeed)+'/يوم':'—';
+      return `<tr>
+        <td style="text-align:right;font-weight:600;">${b}</td>
+        <td>${st.n}</td>
+        <td><span style="background:${bpiBg};color:${bpiColor};padding:3px 10px;border-radius:10px;font-weight:700;">${bpi.toFixed(2)}</span></td>
+        <td style="font-size:0.8rem;color:${bpiColor};">${bpiLabel}</td>
+        <td>${st.median>0?st.median+' يوم':'—'}</td>
+        <td>${st.stddev>0?'±'+st.stddev+' يوم':'—'}</td>
+        <td>${speedFmt}</td>
+        <td style="font-size:0.88rem;">${learning}</td>
+        <td style="font-size:0.85rem;">${confLabel}</td>
+      </tr>`;
+    }).join('');
+
+    // جدول إحصاءات الأنواع
+    const types=Object.keys(model.typeStats).sort();
+    const typeRows=types.map(t=>{
+      const st=model.typeStats[t];
+      const confColor=st.confidence==='high'?'#065f46':st.confidence==='medium'?'#92400e':'#991b1b';
+      const confBg=st.confidence==='high'?'#d1fae5':st.confidence==='medium'?'#fef3c7':'#fee2e2';
+      const regInfo=st.regression?`R²=${(st.regression.r2*100).toFixed(0)}%`:'—';
+      return `<tr>
+        <td style="text-align:right;font-size:0.85rem;">${t}</td>
+        <td>${st.n}</td>
+        <td>${st.median>0?st.median+' يوم':'—'}</td>
+        <td>${st.mean>0?st.mean+' يوم':'—'}</td>
+        <td>${st.stddev>0?'±'+st.stddev:'—'}</td>
+        <td style="font-size:0.82rem;">${regInfo}</td>
+        <td><span style="background:${confBg};color:${confColor};padding:2px 8px;border-radius:8px;font-size:0.78rem;font-weight:700;">${st.confidence==='high'?'🟢 عالية':st.confidence==='medium'?'🟡 متوسطة':'🔴 محدودة'}</span></td>
+      </tr>`;
+    }).join('');
+
+    el.innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px;">
+        ${[
+          {icon:'📊',v:model.totalCompleted,l:'مشاريع مُحلَّلة',c:'#1e40af',bg:'#dbeafe'},
+          {icon:'📅',v:model.globalStats.median+' يوم',l:'وسيط المدة العام',c:'#065f46',bg:'#d1fae5'},
+          {icon:'📐',v:model.globalStats.mean+' يوم',l:'متوسط المدة',c:'#92400e',bg:'#fef3c7'},
+          {icon:'📏',v:'±'+model.globalStats.stddev+' يوم',l:'الانحراف المعياري',c:'#4c1d95',bg:'#ede9fe'},
+          {icon:'🏭',v:branches.length,l:'فروع في النموذج',c:'#0e7490',bg:'#ecfeff'},
+          {icon:'📋',v:types.length,l:'أنواع مشاريع',c:'#7c3aed',bg:'#faf5ff'},
+        ].map(k=>`<div style="text-align:center;padding:14px 8px;background:${k.bg};border-radius:12px;">
+          <div style="font-size:1rem;">${k.icon}</div>
+          <div style="font-size:1.3rem;font-weight:900;color:${k.c};">${k.v}</div>
+          <div style="font-size:0.72rem;font-weight:600;color:${k.c};">${k.l}</div>
+        </div>`).join('')}
+      </div>
+
+      <h4 style="margin:0 0 10px;font-size:0.95rem;color:#0e7490;border-bottom:2px solid #a5f3fc;padding-bottom:6px;">📊 مؤشرات الإنتاجية والتعلم حسب الجهة (BPI)</h4>
+      <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--gray-light);margin-bottom:18px;">
+        <table class="styled-report-table">
+          <thead><tr><th>الجهة</th><th>مشاريع</th><th>BPI</th><th>التقييم</th><th>وسيط المدة</th><th>انحراف</th><th>سرعة التنفيذ</th><th>منحنى التعلم</th><th>الثقة</th></tr></thead>
+          <tbody>${bpiRows}</tbody>
+        </table>
+      </div>
+
+      <h4 style="margin:0 0 10px;font-size:0.95rem;color:#7c3aed;border-bottom:2px solid #c4b5fd;padding-bottom:6px;">📋 إحصاءات تاريخية حسب نوع المشروع</h4>
+      <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--gray-light);">
+        <table class="styled-report-table">
+          <thead><tr><th>نوع المشروع</th><th>مشاريع</th><th>وسيط المدة</th><th>متوسط</th><th>انحراف</th><th>دقة الانحدار</th><th>ثقة التنبؤ</th></tr></thead>
+          <tbody>${typeRows}</tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:0.78rem;color:var(--text-secondary);">
+        * BPI = Branch Productivity Index: الوسيط العام ÷ وسيط الفرع (أعلى من 1 = أسرع من المعدل) | سرعة التنفيذ = إجمالي القيمة ÷ إجمالي الأيام
+      </div>`;
+  }
+
+  // ─── Prediction Accuracy (MAPE / MAE / RMSE) ──────────────────
+  function _genPredictionAccuracy() {
+    const el=document.getElementById('exec-prediction-accuracy'); if(!el) return;
+    if (typeof HistoricalSchedulingEngine==='undefined') {
+      el.innerHTML='<div style="padding:14px;background:#fef3c7;border-radius:8px;color:#92400e;font-size:0.87rem;">⚠️ محرك الجدولة التاريخي غير متاح</div>';
+      return;
+    }
+    const model=HistoricalSchedulingEngine.getFullModel();
+    if (!model) {
+      el.innerHTML='<div style="padding:14px;background:#fef3c7;border-radius:8px;color:#92400e;font-size:0.87rem;">⚠️ لا توجد بيانات تاريخية كافية لحساب دقة التنبؤ</div>';
+      return;
+    }
+    const acc=model.accuracy;
+    if (!acc) {
+      el.innerHTML='<div style="padding:14px;background:#fef3c7;border-radius:8px;color:#92400e;font-size:0.87rem;">⚠️ بيانات غير كافية — يحتاج ≥3 مشاريع منجزة بكلفة ومدة معروفتين</div>';
+      return;
+    }
+    const mapeColor=acc.mape<=15?'#065f46':acc.mape<=30?'#92400e':'#991b1b';
+    const mapeBg=acc.mape<=15?'#d1fae5':acc.mape<=30?'#fef3c7':'#fee2e2';
+    const mapeLabel=acc.mape<=15?'🟢 ممتازة':acc.mape<=30?'🟡 مقبولة':'🔴 تحتاج تحسين';
+    const globalReg=model.globalRegression;
+
+    el.innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:18px;">
+        <div style="text-align:center;padding:18px 12px;background:${mapeBg};border-radius:14px;border:1px solid ${mapeColor}33;">
+          <div style="font-size:0.78rem;font-weight:700;color:${mapeColor};margin-bottom:4px;">MAPE</div>
+          <div style="font-size:2rem;font-weight:900;color:${mapeColor};">${acc.mape}%</div>
+          <div style="font-size:0.75rem;color:${mapeColor};margin-top:4px;">${mapeLabel}</div>
+          <div style="font-size:0.72rem;color:${mapeColor};opacity:0.7;">متوسط الخطأ النسبي</div>
+        </div>
+        <div style="text-align:center;padding:18px 12px;background:#ede9fe;border-radius:14px;border:1px solid #7c3aed33;">
+          <div style="font-size:0.78rem;font-weight:700;color:#4c1d95;margin-bottom:4px;">MAE</div>
+          <div style="font-size:2rem;font-weight:900;color:#4c1d95;">${acc.mae}</div>
+          <div style="font-size:0.75rem;color:#4c1d95;margin-top:4px;">يوم</div>
+          <div style="font-size:0.72rem;color:#4c1d95;opacity:0.7;">متوسط الخطأ المطلق</div>
+        </div>
+        <div style="text-align:center;padding:18px 12px;background:#fef3c7;border-radius:14px;border:1px solid #f59e0b33;">
+          <div style="font-size:0.78rem;font-weight:700;color:#92400e;margin-bottom:4px;">RMSE</div>
+          <div style="font-size:2rem;font-weight:900;color:#92400e;">${acc.rmse}</div>
+          <div style="font-size:0.75rem;color:#92400e;margin-top:4px;">يوم</div>
+          <div style="font-size:0.72rem;color:#92400e;opacity:0.7;">جذر متوسط مربع الخطأ</div>
+        </div>
+        <div style="text-align:center;padding:18px 12px;background:#dbeafe;border-radius:14px;border:1px solid #3b82f633;">
+          <div style="font-size:0.78rem;font-weight:700;color:#1e40af;margin-bottom:4px;">عينة التحقق</div>
+          <div style="font-size:2rem;font-weight:900;color:#1e40af;">${acc.n}</div>
+          <div style="font-size:0.75rem;color:#1e40af;margin-top:4px;">مشروع</div>
+          <div style="font-size:0.72rem;color:#1e40af;opacity:0.7;">مشاريع منجزة بكلفة معروفة</div>
+        </div>
+        ${globalReg?`<div style="text-align:center;padding:18px 12px;background:#ecfeff;border-radius:14px;border:1px solid #06b6d433;">
+          <div style="font-size:0.78rem;font-weight:700;color:#0e7490;margin-bottom:4px;">R² الانحدار</div>
+          <div style="font-size:2rem;font-weight:900;color:#0e7490;">${(globalReg.r2*100).toFixed(0)}%</div>
+          <div style="font-size:0.75rem;color:#0e7490;margin-top:4px;">${globalReg.r2>0.5?'🟢 قوي':globalReg.r2>0.25?'🟡 متوسط':'🔴 ضعيف'}</div>
+          <div style="font-size:0.72rem;color:#0e7490;opacity:0.7;">دقة نموذج الكلفة-المدة</div>
+        </div>`:''}
+      </div>
+      ${globalReg?`
+      <div style="background:#f8fafc;border-radius:10px;padding:14px;border:1px solid #e2e8f0;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:8px;color:var(--primary);">📐 معادلة التنبؤ العامة (كلفة → مدة)</div>
+        <div style="font-family:monospace;font-size:0.85rem;background:#fff;padding:8px;border-radius:6px;border:1px solid #e2e8f0;direction:ltr;text-align:left;">
+          Duration (days) = ${globalReg.a>0?'+':''} ${globalReg.a.toExponential(3)} × Cost + ${Math.round(globalReg.b)}
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:8px;">
+          * النموذج يستخدم ${globalReg.n} مشروع منجز لحساب العلاقة بين الكلفة والمدة (مستثنياً الإدارة الفنية)
+        </div>
+      </div>`:''}
+      <div style="background:${acc.mape<=15?'#d1fae5':acc.mape<=30?'#fef3c7':'#fee2e2'};border-radius:10px;padding:12px 16px;font-size:0.86rem;color:${mapeColor};">
+        ${acc.mape<=15?'✅ النموذج دقيق جداً — يمكن الاعتماد عليه في تخطيط مواعيد تسليم المشاريع':
+          acc.mape<=30?'⚠️ دقة مقبولة — يُنصح بإضافة هامش احتياطي 20-30% عند التخطيط':
+          '🔴 دقة منخفضة — يُنصح بالاعتماد على الخبرة الميدانية مع مراجعة جودة البيانات المدخلة'}
+      </div>`;
+  }
+
+  // ─── Executive Summary ─────────────────────────────────────────
   function _genSummary(curPs,prevPs,curDate) {
     const total=curPs.length, completed=curPs.filter(_isCompleted).length;
     const ongoing=curPs.filter(_isInProgress).length, notStarted=curPs.filter(_isNotStarted).length;
@@ -29721,70 +30292,70 @@ const ExecReports = (function() {
     const healthD=(_currentData.health||[]).filter(h=>h.grade==='D');
     const healthA=(_currentData.health||[]).filter(h=>h.grade==='A');
     const top=(_currentData.scorecard||[]).slice(0,3).map(s=>s.b);
-
     const noUpdate30=curPs.filter(p=>_isInProgress(p)&&_daysSince(p.statusDate)>30);
     const near90=curPs.filter(p=>_isInProgress(p)&&_getProgress(p)>=90);
     const vipNotStarted=curPs.filter(p=>_isVip(p)&&_isNotStarted(p)&&_daysSince(p.assignmentDate||p.planFrom||curDate)>30);
-    const vipExpiredTimeline=curPs.filter(p=>_isVip(p)&&_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date(curDate));
+    const vipExpiredTL=curPs.filter(p=>_isVip(p)&&_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date(curDate));
     const vipPreAudit=curPs.filter(p=>_isVip(p)&&((p.status||'').includes('فحص أولي')||(p.subStatus||'').includes('فحص أولي')));
+    const overTL=curPs.filter(p=>_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date(curDate)&&_getProgress(p)<90);
     const alertCards=[
-      {v:noUpdate30.length,l:'بدون تحديث > شهر',icon:'⏱️',c:'#92400e',bg:'#fef3c7',key:'noUpdate30'},
-      {v:near90.length,l:'إنجاز ≥90% ولازال جاري',icon:'🔔',c:'#1e40af',bg:'#dbeafe',key:'near90'},
-      {v:vipNotStarted.length,l:'VIP لم يبدأ > شهر',icon:'🔴',c:'#991b1b',bg:'#fee2e2',key:'vipNotStarted'},
-      {v:vipExpiredTimeline.length,l:'VIP جاري وانتهى تزمينه',icon:'📅',c:'#7c3aed',bg:'#ede9fe',key:'vipExpired'},
-      {v:vipPreAudit.length,l:'VIP في فحص أولي',icon:'📋',c:'#065f46',bg:'#d1fae5',key:'vipPreAudit'},
+      {v:noUpdate30.length,l:'بدون تحديث > شهر',icon:'⏱️',c:'#92400e',bg:'#fef3c7'},
+      {v:near90.length,l:'إنجاز ≥90%',icon:'🔔',c:'#1e40af',bg:'#dbeafe'},
+      {v:overTL.length,l:'تجاوزت التزمين',icon:'📅',c:'#dc2626',bg:'#fef2f2'},
+      {v:vipNotStarted.length,l:'VIP لم يبدأ > شهر',icon:'🔴',c:'#991b1b',bg:'#fee2e2'},
+      {v:vipExpiredTL.length,l:'VIP انتهى تزمينه',icon:'📅',c:'#7c3aed',bg:'#ede9fe'},
+      {v:vipPreAudit.length,l:'VIP في فحص أولي',icon:'📋',c:'#065f46',bg:'#d1fae5'},
     ];
-
     const branches=[...new Set(curPs.map(p=>p.executingEntity||'').filter(Boolean))].sort();
     const entityRows=branches.map(b=>{
       const bp=curPs.filter(p=>p.executingEntity===b);
       const bNoUp=bp.filter(p=>_isInProgress(p)&&_daysSince(p.statusDate)>30).length;
       const bNear90=bp.filter(p=>_isInProgress(p)&&_getProgress(p)>=90).length;
+      const bOverTL=bp.filter(p=>_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date(curDate)&&_getProgress(p)<90).length;
       const bVipNS=bp.filter(p=>_isVip(p)&&_isNotStarted(p)&&_daysSince(p.assignmentDate||p.planFrom||curDate)>30).length;
       const bVipExp=bp.filter(p=>_isVip(p)&&_isInProgress(p)&&p.planTo&&new Date(p.planTo)<new Date(curDate)).length;
-      const bVipAudit=bp.filter(p=>_isVip(p)&&((p.status||'').includes('فحص أولي')||(p.subStatus||'').includes('فحص أولي'))).length;
-      const hasAlert=bNoUp>0||bNear90>0||bVipNS>0||bVipExp>0||bVipAudit>0;
+      const hasAlert=bNoUp>0||bNear90>0||bOverTL>0||bVipNS>0||bVipExp>0;
       if (!hasAlert) return '';
       const cell=(v,c,bg)=>v>0?`<td style="text-align:center;"><span style="background:${bg};color:${c};padding:3px 10px;border-radius:10px;font-weight:700;">${v}</span></td>`:`<td style="text-align:center;color:#94a3b8;">—</td>`;
       return `<tr>
         <td style="text-align:right;font-weight:600;">${b}</td>
         ${cell(bNoUp,'#92400e','#fef3c7')}
         ${cell(bNear90,'#1e40af','#dbeafe')}
+        ${cell(bOverTL,'#dc2626','#fef2f2')}
         ${cell(bVipNS,'#991b1b','#fee2e2')}
         ${cell(bVipExp,'#7c3aed','#ede9fe')}
-        ${cell(bVipAudit,'#065f46','#d1fae5')}
       </tr>`;
     }).filter(Boolean).join('');
 
     document.getElementById('exec-summary-results').innerHTML=`
-      <div style="margin-bottom:20px;">
-        <h4 style="margin:0 0 12px;color:var(--primary);font-size:1rem;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">⚠️ تنبيهات تحتاج متابعة فورية</h4>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:16px;">
-          ${alertCards.map(k=>`<div style="text-align:center;padding:16px 12px;background:${k.bg};border-radius:12px;border:1px solid ${k.c}33;">
-            <div style="font-size:2rem;font-weight:900;color:${k.c};">${k.v}</div>
-            <div style="font-size:0.78rem;font-weight:700;color:${k.c};margin-top:4px;">${k.icon} ${k.l}</div>
-          </div>`).join('')}
-        </div>
-        ${entityRows?`<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--gray-light);margin-bottom:16px;">
-          <table class="styled-report-table">
-            <thead><tr><th>الجهة المنفذة</th><th>⏱️ بدون تحديث >شهر</th><th>🔔 إنجاز ≥90%</th><th>🔴 VIP لم يبدأ >شهر</th><th>📅 VIP انتهى تزمينه</th><th>📋 VIP فحص أولي</th></tr></thead>
-            <tbody>${entityRows}</tbody>
-          </table>
-        </div>`:'<div style="background:#d1fae5;padding:10px 14px;border-radius:8px;color:#065f46;font-size:0.87rem;">✅ لا توجد تنبيهات على مستوى الجهات المنفذة</div>'}
+      <h4 style="margin:0 0 12px;color:var(--primary);font-size:1rem;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">⚠️ تنبيهات تحتاج متابعة فورية</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;">
+        ${alertCards.map(k=>`<div style="text-align:center;padding:16px 12px;background:${k.bg};border-radius:12px;border:1px solid ${k.c}33;">
+          <div style="font-size:1.9rem;font-weight:900;color:${k.c};">${k.v}</div>
+          <div style="font-size:0.77rem;font-weight:700;color:${k.c};margin-top:4px;">${k.icon} ${k.l}</div>
+        </div>`).join('')}
       </div>
+      ${entityRows?`<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--gray-light);margin-bottom:16px;">
+        <table class="styled-report-table">
+          <thead><tr><th>الجهة المنفذة</th><th>⏱️ بدون تحديث</th><th>🔔 إنجاز ≥90%</th><th>📅 تجاوزت التزمين</th><th>🔴 VIP لم يبدأ</th><th>📅 VIP انتهى تزمينه</th></tr></thead>
+          <tbody>${entityRows}</tbody>
+        </table>
+      </div>`:'<div style="background:#d1fae5;padding:10px 14px;border-radius:8px;color:#065f46;font-size:0.87rem;margin-bottom:16px;">✅ لا توجد تنبيهات حرجة على مستوى الجهات المنفذة</div>'}
       <h4 style="margin:0 0 12px;color:var(--primary);font-size:1rem;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">📊 نظرة عامة على المحفظة</h4>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px;">
-        ${[{v:total,l:'إجمالي المشاريع',c:'#1e40af',bg:'#dbeafe'},{v:completed,l:'منجزة',c:'#065f46',bg:'#d1fae5'},{v:ongoing,l:'جارية',c:'#92400e',bg:'#fef3c7'},{v:notStarted,l:'لم تبدأ',c:'#4c1d95',bg:'#ede9fe'},{v:stalled,l:'متوقفة',c:'#991b1b',bg:'#fee2e2'},{v:critical.length,l:'تحتاج تدخل',c:'#991b1b',bg:'#fee2e2'}].map(k=>`<div style="text-align:center;padding:14px;background:${k.bg};border-radius:10px;"><div style="font-size:1.7rem;font-weight:900;color:${k.c};">${k.v}</div><div style="font-size:0.78rem;font-weight:600;color:${k.c};">${k.l}</div></div>`).join('')}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px;">
+        ${[{v:total,l:'إجمالي',c:'#1e40af',bg:'#dbeafe'},{v:completed,l:'منجزة',c:'#065f46',bg:'#d1fae5'},{v:ongoing,l:'جارية',c:'#92400e',bg:'#fef3c7'},{v:notStarted,l:'لم تبدأ',c:'#4c1d95',bg:'#ede9fe'},{v:stalled,l:'متوقفة',c:'#991b1b',bg:'#fee2e2'},{v:critical.length,l:'تحتاج تدخل',c:'#991b1b',bg:'#fee2e2'}].map(k=>`<div style="text-align:center;padding:14px;background:${k.bg};border-radius:10px;"><div style="font-size:1.7rem;font-weight:900;color:${k.c};">${k.v}</div><div style="font-size:0.77rem;font-weight:600;color:${k.c};">${k.l}</div></div>`).join('')}
       </div>
-      ${healthD.length?`<div style="background:#fee2e2;border-radius:10px;padding:12px 16px;margin-bottom:12px;border-right:4px solid #ef4444;"><strong style="color:#991b1b;">🚨 فروع بحالة حرجة (D):</strong> <span style="color:#991b1b;margin-right:8px;">${healthD.map(h=>h.b).join('، ')}</span></div>`:''}
-      ${healthA.length?`<div style="background:#d1fae5;border-radius:10px;padding:12px 16px;margin-bottom:12px;border-right:4px solid #10b981;"><strong style="color:#065f46;">✅ فروع ممتازة (A):</strong> <span style="color:#065f46;margin-right:8px;">${healthA.map(h=>h.b).join('، ')}</span></div>`:''}
-      ${top.length?`<div style="background:#ede9fe;border-radius:10px;padding:12px 16px;margin-bottom:12px;border-right:4px solid #7c3aed;"><strong style="color:#4c1d95;">🏆 أعلى الفروع أداءً:</strong> <span style="color:#4c1d95;margin-right:8px;">${top.map((b,i)=>['🥇','🥈','🥉'][i]+' '+b).join('، ')}</span></div>`:''}
+      ${healthD.length?`<div style="background:#fee2e2;border-radius:10px;padding:12px 16px;margin-bottom:10px;border-right:4px solid #ef4444;"><strong style="color:#991b1b;">🚨 جهات بحالة حرجة (D):</strong> <span style="color:#991b1b;margin-right:8px;">${healthD.map(h=>h.b).join('، ')}</span></div>`:''}
+      ${healthA.length?`<div style="background:#d1fae5;border-radius:10px;padding:12px 16px;margin-bottom:10px;border-right:4px solid #10b981;"><strong style="color:#065f46;">✅ جهات ممتازة (A):</strong> <span style="color:#065f46;margin-right:8px;">${healthA.map(h=>h.b).join('، ')}</span></div>`:''}
+      ${top.length?`<div style="background:#ede9fe;border-radius:10px;padding:12px 16px;margin-bottom:10px;border-right:4px solid #7c3aed;"><strong style="color:#4c1d95;">🏆 أعلى الجهات أداءً:</strong> <span style="color:#4c1d95;margin-right:8px;">${top.map((b,i)=>['🥇','🥈','🥉'][i]+' '+b).join('، ')}</span></div>`:''}
       <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:8px;">📅 تاريخ التقرير: ${curDate}</div>`;
   }
+
+  // ─── Export / Print ────────────────────────────────────────────
   function exportProductivity() {
     if (!_currentData.productivity.length) { _notify('يرجى توليد التقارير أولاً','warning'); return; }
     if (typeof XLSX==='undefined') { _notify('مكتبة Excel غير متاحة','error'); return; }
-    const rows=_currentData.productivity.map(p=>({'الفرع':p.b,'منجزة كلي':p.completed,'منجزة الفترة':p.delta,'انطلقت':p.started,'جارية':p.ongoing,'بانتظار البدء':p.notStarted}));
+    const rows=_currentData.productivity.map(p=>({'الجهة':p.b,'منجزة كلي':p.completed,'منجزة الفترة':p.delta,'انطلقت':p.started,'جارية':p.ongoing,'متوسط التقدم':p.avgProg+'%','بانتظار البدء':p.notStarted}));
     const ws=XLSX.utils.json_to_sheet(rows); const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'الإنتاجية الشهرية');
     XLSX.writeFile(wb,'productivity_'+new Date().toISOString().slice(0,10)+'.xlsx');
@@ -29793,45 +30364,62 @@ const ExecReports = (function() {
     if (!_currentData.health.length) { _notify('يرجى توليد التقارير أولاً','warning'); return; }
     if (typeof XLSX==='undefined') { _notify('مكتبة Excel غير متاحة','error'); return; }
     const wb=XLSX.utils.book_new();
-    if (_currentData.health.length) { const rows=_currentData.health.map(h=>({'الفرع':h.b,'التقييم':h.grade,'النقاط':h.score,'متوقفة':h.stalled,'بلا تحديث':h.noUpdate,'الإنجاز %':h.completionRate})); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'الصحة التشغيلية'); }
-    if (_currentData.critical.length) { const rows=_currentData.critical.map(p=>({'المشروع':p.projectName,'الفرع':p.executingEntity,'نوع التعثر':p.reasons.map(r=>r.label).join(',')})); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'المشاريع الحرجة'); }
-    if (_currentData.scorecard.length) { const rows=_currentData.scorecard.map((s,i)=>({'الترتيب':i+1,'الفرع':s.b,'إنجاز':s.compScore,'سرعة':s.speed,'تحديث':s.update,'المجموع':s.total_score})); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'بطاقة الأداء'); }
-    XLSX.writeFile(wb,'executive_reports_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    if (_currentData.health.length) {
+      const rows=_currentData.health.map(h=>({'الجهة':h.b,'التقييم':h.grade,'النقاط':h.score,'متوقفة':h.stalled,'بلا تحديث':h.noUpdate,'تجاوزت التزمين':h.overTL,'الإنجاز %':h.completionRate}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'الصحة التشغيلية');
+    }
+    if (_currentData.critical.length) {
+      const rows=_currentData.critical.map(p=>({'المشروع':p.projectName,'الجهة':p.executingEntity,'عدد أسباب التعثر':p.reasons.length,'نوع التعثر':p.reasons.map(r=>r.label).join(',')}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'المشاريع الحرجة');
+    }
+    if (_currentData.scorecard.length) {
+      const rows=_currentData.scorecard.map((s,i)=>({'الترتيب':i+1,'الجهة':s.b,'إنجاز(40)':s.compScore,'سرعة(30)':s.speed,'تحديث(30)':s.update,'المجموع(100)':s.total_score}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'بطاقة الأداء');
+    }
+    if (_currentData.advanced) {
+      const model=_currentData.advanced;
+      const rows=Object.entries(model.branchStats).map(([b,st])=>({'الجهة':b,'مشاريع محللة':st.n,'BPI':st.bpi,'وسيط المدة (يوم)':st.median,'متوسط المدة':st.mean,'انحراف معياري':st.stddev,'سرعة التنفيذ':st.execSpeed}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'التحليلات المتقدمة');
+    }
+    XLSX.writeFile(wb,'executive_dashboard_'+new Date().toISOString().slice(0,10)+'.xlsx');
     _notify('✅ تم تصدير Excel','success');
   }
-  function _openPrintWin(bodyHtml, titleHtml) {
-    const w=window.open('','_blank','width=1000,height=700'); if (!w) return;
+  function _openPrintWin(bodyHtml,titleHtml) {
+    const w=window.open('','_blank','width=1100,height=750'); if (!w) return;
     w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
       <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
       <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Cairo,sans-serif;padding:20px;direction:rtl}
-      table{width:100%;border-collapse:collapse;margin-bottom:20px}th,td{padding:8px;border:1px solid #ddd;text-align:center;font-size:11px}
-      th{background:#0f2d5e;color:#fff}h2{margin:16px 0 10px;font-size:13pt;color:#0f2d5e;border-bottom:2px solid #0f2d5e;padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-bottom:16px}th,td{padding:7px;border:1px solid #ddd;text-align:center;font-size:11px}
+      th{background:#0f2d5e;color:#fff}h2{margin:14px 0 8px;font-size:13pt;color:#0f2d5e;border-bottom:2px solid #0f2d5e;padding-bottom:4px}
       @media print{button{display:none!important}}</style></head><body>${titleHtml}${bodyHtml}</body></html>`);
     w.document.close(); setTimeout(()=>w.print(),500);
   }
   function printAll() {
-    const h=document.getElementById('exec-health-results')?.innerHTML||'';
-    const c=document.getElementById('exec-critical-results')?.innerHTML||'';
-    const p=document.getElementById('exec-productivity-results')?.innerHTML||'';
-    const s=document.getElementById('exec-scorecard-results')?.innerHTML||'';
-    const sm=document.getElementById('exec-summary-results')?.innerHTML||'';
     const today=new Date().toLocaleDateString('ar-SA');
+    const parts=['exec-kpi-grid','exec-health-results','exec-critical-results','exec-productivity-results','exec-scorecard-results','exec-advanced-analytics','exec-prediction-accuracy','exec-summary-results'];
+    const labels=['📊 KPI','🏢 أداء الجهات','🔔 التنبيهات الحرجة','📈 الإنتاجية','🏆 بطاقة الأداء','🔬 التحليلات المتقدمة','🎯 دقة التنبؤ','📄 الخلاصة التنفيذية'];
     _openPrintWin(
-      `<h2>🏥 الصحة التشغيلية</h2>${h}<div style="page-break-before:always"></div><h2>🚨 المشاريع الحرجة</h2>${c}<div style="page-break-before:always"></div><h2>📈 الإنتاجية</h2>${p}<div style="page-break-before:always"></div><h2>🏆 بطاقة الأداء</h2>${s}<h2>📄 الخلاصة التنفيذية</h2>${sm}`,
-      `<h1 style="text-align:center;font-size:16pt;margin-bottom:20px;">📋 تقارير الإدارة العليا — ${today}</h1>`
+      parts.map((id,i)=>`<h2>${labels[i]}</h2>${document.getElementById(id)?.innerHTML||''}`).join('<div style="page-break-before:always"></div>'),
+      `<h1 style="text-align:center;font-size:16pt;margin-bottom:20px;">📋 لوحة القيادة التنفيذية — ${today}</h1>`
     );
   }
   function printCritical() {
     _openPrintWin(document.getElementById('exec-critical-results')?.innerHTML||'',
-      `<h2 style="color:#991b1b;margin-bottom:12px;">🚨 القائمة الحمراء — المشاريع المتعثرة والحرجة</h2>`);
+      `<h2 style="color:#991b1b;margin-bottom:12px;">🔔 التنبيهات الحرجة — القائمة الحمراء</h2>`);
   }
   function printScorecard() {
     _openPrintWin(document.getElementById('exec-scorecard-results')?.innerHTML||'',
-      `<h2 style="color:#4c1d95;margin-bottom:12px;">🏆 بطاقة الأداء المقارنة بين الفروع</h2>`);
+      `<h2 style="color:#4c1d95;margin-bottom:12px;">🏆 بطاقة الأداء المقارنة</h2>`);
   }
   function printExecutiveSummary() {
     _openPrintWin(document.getElementById('exec-summary-results')?.innerHTML||'',
       `<h2 style="margin-bottom:16px;color:#0f2d5e;">📄 الخلاصة التنفيذية للمدير العام</h2>`);
+  }
+  function printAdvancedAnalytics() {
+    _openPrintWin(
+      (document.getElementById('exec-advanced-analytics')?.innerHTML||'')+(document.getElementById('exec-prediction-accuracy')?.innerHTML||''),
+      `<h2 style="margin-bottom:16px;color:#0e7490;">🔬 التحليلات المتقدمة ودقة التنبؤ</h2>`
+    );
   }
   function _notify(msg,type) {
     const n=document.getElementById('notification'); if(!n) return;
@@ -29843,7 +30431,7 @@ const ExecReports = (function() {
       btn.addEventListener('click',()=>_initFilters());
     });
   });
-  return { generateAll, filterCritical, printAll, printCritical, printScorecard, printExecutiveSummary, exportAll, exportProductivity, onDateChange };
+  return { generateAll, filterCritical, printAll, printCritical, printScorecard, printExecutiveSummary, printAdvancedAnalytics, exportAll, exportProductivity, onDateChange };
 })();
 
     </script>

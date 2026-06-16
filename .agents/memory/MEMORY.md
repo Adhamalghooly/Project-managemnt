@@ -1,0 +1,2 @@
+- [Executive Dashboard Architecture](exec-dashboard.md) — ExecReports + HistoricalSchedulingEngine + CapacityScheduler coordination pattern
+- [File Reading Strategy](file-reading.md) — file is 30k+ lines, read tool shows 21488 max; use bash sed -n 'X,Yp' for lines beyond that
